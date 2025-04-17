@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+ComputerVision/realwaste-main/RealWaste/
+
 # C extensions
 *.so
 
