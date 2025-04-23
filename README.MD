@@ -31,7 +31,7 @@ GreenSort/
 │   └── greensort_model.h5       # Trained Keras model
 │   └── tfjs_model/              # TensorFlow.js model for browser deployment
 ├── notebooks/
-│   └── greensort_training.ipynb # Jupyter notebook for training and evaluation
+│   └── CapstoneDBS.ipynb # Jupyter notebook for training and evaluation
 ├── src/
 │   └── utils.py                 # Helper functions for preprocessing and evaluation
 ├── testing.py                   # GUI tool for testing the model
@@ -87,14 +87,14 @@ GreenSort/
 
 5. **Prepare the trained model**:
    - Place `greensort_model.h5` in the `models/` directory.
-   - Or train the model yourself using `notebooks/greensort_training.ipynb`.
+   - Or train the model yourself using `notebooks/CapstoneDBS.ipynb`.
 
 ---
 
 ## 🔧 Usage
 
 ### 1. Training the Model
-- Open `notebooks/greensort_training.ipynb` in Jupyter Notebook or JupyterLab.
+- Open `notebooks/CapstoneDBS.ipynb` in Jupyter Notebook or JupyterLab.
 - Follow the steps to:
   - Preprocess the dataset
   - Train the model (recommended: MobileNetV2)
