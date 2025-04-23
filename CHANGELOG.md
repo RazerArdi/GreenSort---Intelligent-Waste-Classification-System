@@ -58,13 +58,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > Created by **BY** Muhammad Rofi'ul Arham
 
 ### 🎉 Added
-- _N/A_ (first release)
+- Pre-trained MobileNetV2 model for image-based waste classification
+- Jupyter Notebook for model training (`CapstoneDBS.ipynb`)
 
 ### 🛠️ Changed
-- Improved accuracy of MobileNetV2 model for garbage classification to 89%.
+- _N/A_ (first release)
 
 ### 🐛 Fixed
-- _N/A_ (first release)
+- Improved accuracy of MobileNetV2 model for garbage classification up to 89%.
 
 ### 🗑️ Removed
-- _N/A_ (first release)
+- Removed the InceptionV3 model from the model training file (`CapstoneDBS.ipynb`), visible in the preview file only (`preview_inception.ipynb`)
