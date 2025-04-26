@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.1.0] - 2025-04-27
+> Created by **Bayu Ardiyansyah**
+
+### 🎉 Added
+- Enhanced error handling for model loading in `testing.py` to improve robustness of the GUI tool.
+- Improved model status updates in `testing.py` to provide clearer feedback on classification and pricing model loading.
+
+### 🛠️ Changed
+- Updated `testing.py` to ensure consistent model loading status display, setting green status only when both classification and pricing models load successfully.
+
+### 🐛 Fixed
+- Resolved TensorFlow model loading error in `testing.py` by specifying `custom_objects` for `mse` loss function in pricing model (`greensort_price_model_tf.h5`).
+- Fixed Tkinter callback `NameError` in `testing.py` by properly capturing exception messages in lambda functions for asynchronous status updates.
+
+### 🗑️ Removed
+- _N/A_
+
+---
+
 ## [4.0.0] - 2025-04-26
 > Created by **Bayu Ardiyansyah**
 

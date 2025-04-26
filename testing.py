@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-GreenSort - Waste Classification Testing Tool
-This script provides a GUI for testing the waste classification model.
+GreenSort - Waste Classification and Pricing Tool
+This script provides a GUI for testing the waste classification and pricing model.
 """
 
 import os
@@ -19,13 +19,16 @@ from tkinter import filedialog, ttk, messagebox
 from PIL import Image, ImageTk
 import threading
 import traceback
+import json
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+import pandas as pd
 
 # Define waste categories
 CATEGORIES = ['Cardboard', 'Food_Organics', 'Glass', 'Metal', 
               'Miscellaneous_Trash', 'Paper', 'Plastic', 
               'Textile_Trash', 'Vegetation']
 
-# Define pricing per kg for each category
+# Define pricing per kg for each category (used as Harga_Pasar)
 PRICE_PER_KG = {
     'Cardboard': 2000,
     'Food_Organics': 500,
@@ -42,19 +45,21 @@ class GreenSortApp:
     def __init__(self, root):
         """Initialize the application"""
         self.root = root
-        self.root.title("GreenSort - Waste Classification Testing Tool")
+        self.root.title("GreenSort - Waste Classification and Pricing Tool")
         self.root.geometry("900x700")
         self.root.resizable(True, True)
         self.root.configure(bg="#f0f0f0")
         
-        # Attempt to set window icon
         try:
             self.root.iconbitmap("greensort_icon.ico")
         except:
             pass
             
-        # Initialize model variable
-        self.model = None
+        # Initialize models and preprocessing
+        self.classification_model = None
+        self.pricing_model = None
+        self.encoder = None
+        self.scaler = None
         
         # Create a progress indicator
         self.progress_var = tk.DoubleVar()
@@ -66,222 +71,30 @@ class GreenSortApp:
         # Create and organize the UI elements
         self.create_ui()
         
-        # Load model in a separate thread
-        self.load_model_thread = threading.Thread(target=self.load_model)
-        self.load_model_thread.daemon = True
-        self.load_model_thread.start()
+        # Load classification model in a separate thread
+        self.load_class_model_thread = threading.Thread(target=self.load_classification_model)
+        self.load_class_model_thread.daemon = True
+        self.load_class_model_thread.start()
         
-    def create_ui(self):
-        """Create the UI elements"""
-        # Top section for title and model status
-        top_frame = ttk.Frame(self.main_frame)
-        top_frame.pack(fill=tk.X, pady=(0, 20))
-        
-        ttk.Label(top_frame, text="GreenSort Waste Classification", 
-                  font=("Arial", 20, "bold")).pack(side=tk.LEFT)
-        
-        self.model_status = ttk.Label(top_frame, text="Loading model...", 
-                                      font=("Arial", 10), foreground="orange")
-        self.model_status.pack(side=tk.RIGHT, padx=10)
-        
-        # Create a notebook for tabs
-        notebook = ttk.Notebook(self.main_frame)
-        notebook.pack(fill=tk.BOTH, expand=True)
-        
-        # Classification tab
-        self.classify_tab = ttk.Frame(notebook, padding=10)
-        notebook.add(self.classify_tab, text="Classify Waste")
-        
-        # About tab
-        about_tab = ttk.Frame(notebook, padding=10)
-        notebook.add(about_tab, text="About")
-        
-        # Setup the classification tab
-        self.setup_classify_tab()
-        
-        # Setup the about tab
-        self.setup_about_tab(about_tab)
-        
-        # Setup the footer
-        footer = ttk.Frame(self.main_frame)
-        footer.pack(fill=tk.X, pady=(20, 0))
-        ttk.Label(footer, text="© 2025 GreenSort. All rights reserved.").pack(side=tk.LEFT)
-        ttk.Label(footer, text="v1.0.0").pack(side=tk.RIGHT)
-        
-        # Bind the resize event to trigger image redisplay
-        self.root.bind("<Configure>", self.on_window_resize)
-        
-    def on_window_resize(self, event):
-        """Handle window resize events to redisplay image if needed"""
-        # Only process if it's a substantial resize
-        if hasattr(self, 'last_width') and hasattr(self, 'last_height'):
-            if (abs(self.last_width - self.root.winfo_width()) > 20 or 
-                abs(self.last_height - self.root.winfo_height()) > 20):
-                if hasattr(self, 'selected_image_path') and self.selected_image_path:
-                    self.display_image(self.selected_image_path)
-                self.last_width = self.root.winfo_width()
-                self.last_height = self.root.winfo_height()
-        else:
-            self.last_width = self.root.winfo_width()
-            self.last_height = self.root.winfo_height()
-        
-    def setup_classify_tab(self):
-        """Setup the classification tab UI"""
-        # Left panel for image and selection
-        left_panel = ttk.Frame(self.classify_tab)
-        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
-            
-        # Frame for image display
-        img_frame = ttk.LabelFrame(left_panel, text="Waste Image", padding=10)
-        img_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
-            
-        # Canvas for displaying the image with fixed size
-        self.img_canvas = tk.Canvas(img_frame, bg="white", bd=0, highlightthickness=0, width=400, height=300)
-        self.img_canvas.pack(fill=tk.BOTH, expand=True)
-            
-        # Make sure the canvas has some initial size
-        self.img_canvas.update()
-            
-        # Label to show when no image is selected
-        self.no_img_label = ttk.Label(self.img_canvas, text="No image selected", 
-                                    font=("Arial", 12))
-        self.no_img_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-                
-        # Control frame for buttons and quantity
-        control_frame = ttk.Frame(left_panel)
-        control_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        # Button to select image
-        self.select_btn = ttk.Button(control_frame, text="Select Image", 
-                                     command=self.select_image)
-        self.select_btn.pack(side=tk.LEFT, padx=(0, 10))
-        
-        # Quantity frame
-        qty_frame = ttk.Frame(control_frame)
-        qty_frame.pack(side=tk.RIGHT)
-        
-        ttk.Label(qty_frame, text="Quantity (kg):").pack(side=tk.LEFT, padx=(0, 5))
-        
-        # Use StringVar instead of DoubleVar for better control
-        self.quantity_var = tk.StringVar(value="1.0")
-        
-        # Create the spinbox with more direct control
-        self.quantity_spinbox = ttk.Spinbox(
-            qty_frame, 
-            from_=0.1, 
-            to=100.0, 
-            textvariable=self.quantity_var, 
-            width=5, 
-            increment=0.1
-        )
-        self.quantity_spinbox.pack(side=tk.LEFT)
-        
-        # Button to classify
-        self.classify_btn = ttk.Button(left_panel, text="Classify Waste", 
-                                      command=self.classify_image, state=tk.DISABLED)
-        self.classify_btn.pack(fill=tk.X)
-        
-        # Progress bar
-        self.progress = ttk.Progressbar(left_panel, variable=self.progress_var, 
-                                       mode='determinate')
-        self.progress.pack(fill=tk.X, pady=(10, 0))
-        
-        # Right panel for results
-        right_panel = ttk.LabelFrame(self.classify_tab, text="Classification Results", padding=10)
-        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        
-        # Top predictions frame
-        self.predictions_frame = ttk.Frame(right_panel)
-        self.predictions_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        ttk.Label(self.predictions_frame, text="No results available",
-                 font=("Arial", 12, "italic")).pack(pady=20)
-        
-        # Price calculation frame
-        self.price_frame = ttk.LabelFrame(right_panel, text="Price Calculation", padding=10)
-        self.price_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Initialize variables to store the selected image
-        self.selected_image_path = None
-        self.tk_image = None
-        self.original_image = None
-        self.processed_image = None
-        
-        # Class variable to store current quantity safely between threads
-        self.current_quantity = 1.0
-        
-    def validate_quantity(self, value):
-        """Validate the quantity input to ensure it's a positive float"""
-        try:
-            if value:
-                val = float(value)
-                return val > 0
-            return True  # Allow empty input temporarily
-        except ValueError:
-            return False
-        
-    def setup_about_tab(self, tab):
-        """Setup the about tab with project information"""
-        about_text = tk.Text(tab, wrap=tk.WORD, font=("Arial", 11), 
-                            height=20, width=70, padx=10, pady=10)
-        about_text.pack(fill=tk.BOTH, expand=True)
-        
-        about_content = """
-        # GreenSort - Waste Classification System
-        
-        GreenSort is an intelligent waste classification system that uses Computer Vision to automatically identify 
-        different types of waste materials from images.
-        
-        ## Features
-        
-        - Classify waste into 9 different categories
-        - Estimate the value of recyclable materials
-        - Calculate shipping costs based on distance and quantity
-        - Optimize waste management and recycling processes
-        
-        ## Waste Categories
-        
-        1. Cardboard - Rp 2,000/kg
-        2. Food Organics - Rp 500/kg
-        3. Glass - Rp 1,500/kg
-        4. Metal - Rp 8,000/kg
-        5. Miscellaneous Trash - Rp 300/kg
-        6. Paper - Rp 2,500/kg
-        7. Plastic - Rp 4,000/kg
-        8. Textile Trash - Rp 1,000/kg
-        9. Vegetation - Rp 600/kg
-        
-        ## How to Use
-        
-        1. Select an image of waste material using the "Select Image" button
-        2. Set the quantity in kilograms
-        3. Click "Classify Waste" to analyze the image
-        4. View the classification results and price estimation
-        
-        ## Dataset
-        
-        This application is trained on the RealWaste dataset from the UCI Machine Learning Repository:
-        https://archive.ics.uci.edu/dataset/908/realwaste
-        """
-        
-        about_text.insert(tk.END, about_content)
-        about_text.config(state=tk.DISABLED)
-        
-    def load_model(self):
+        # Load pricing model and metadata
+        self.load_pricing_model()
+
+    def load_classification_model(self):
         """Load the waste classification model"""
         try:
             model_path = 'greensort_model.h5'
             if os.path.exists(model_path):
-                self.model = load_model(model_path)
-                self.root.after(0, lambda: self.update_model_status("Model loaded successfully", "green"))
+                self.classification_model = load_model(model_path)
+                self.root.after(0, lambda: self.update_model_status("Classification model loaded", "green"))
             else:
-                self.root.after(0, lambda: self.update_model_status("Model file not found", "red"))
+                self.root.after(0, lambda: self.update_model_status("Classification model not found", "red"))
                 self.root.after(1000, self.locate_model)
         except Exception as e:
-            self.root.after(0, lambda: self.update_model_status(f"Error loading model: {str(e)}", "red"))
-    
+            error_msg = f"Error loading classification model: {str(e)}"
+            self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
+
     def locate_model(self):
-        """Ask user to locate the model file"""
+        """Ask user to locate the classification model file"""
         response = messagebox.askyesno("Model Not Found", 
                                       "The model file 'greensort_model.h5' was not found.\n\n"
                                       "Do you want to locate the model file manually?")
@@ -292,13 +105,14 @@ class GreenSortApp:
             )
             if model_path:
                 try:
-                    self.model = load_model(model_path)
-                    self.update_model_status("Model loaded successfully", "green")
+                    self.classification_model = load_model(model_path)
+                    self.update_model_status("Classification model loaded successfully", "green")
                 except Exception as e:
-                    self.update_model_status(f"Error loading model: {str(e)}", "red")
+                    error_msg = f"Error loading classification model: {str(e)}"
+                    self.update_model_status(error_msg, "red")
         else:
             self.create_test_model()
-    
+
     def create_test_model(self):
         """Create a simple test model for demonstration"""
         try:
@@ -321,20 +135,229 @@ class GreenSortApp:
                 metrics=['accuracy']
             )
             
-            self.model = model
-            self.root.after(0, lambda: self.update_model_status("Demo model created (untrained)", "orange"))
+            self.classification_model = model
+            self.root.after(0, lambda: self.update_model_status("Demo classification model created (untrained)", "orange"))
             self.root.after(0, lambda: messagebox.showwarning("Demo Mode", 
-                                                             "Running in demo mode with an untrained model.\n"
+                                                             "Running in demo mode with an untrained classification model.\n"
                                                              "Classifications will be random and not meaningful."))
         except Exception as e:
-            self.root.after(0, lambda: self.update_model_status(f"Error creating demo model: {str(e)}", "red"))
-    
+            error_msg = f"Error creating demo classification model: {str(e)}"
+            self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
+
+    def load_pricing_model(self):
+        """Load the pricing model and preprocessing metadata"""
+        try:
+            model_path = 'models/greensort_price_model_tf.h5'
+            metadata_path = 'models/preprocessing_metadata.json'
+            
+            if os.path.exists(model_path) and os.path.exists(metadata_path):
+                # Load the pricing model with custom objects
+                self.pricing_model = load_model(model_path, custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
+                
+                # Load metadata
+                with open(metadata_path, 'r') as f:
+                    metadata = json.load(f)
+                
+                # Initialize encoder
+                self.encoder = OneHotEncoder(sparse_output=False, categories=[metadata['sampah_types']])
+                self.encoder.fit(np.array(metadata['sampah_types']).reshape(-1, 1))
+                
+                # Initialize scaler
+                self.scaler = StandardScaler()
+                self.scaler.mean_ = np.array(metadata['scaler_mean'])
+                self.scaler.scale_ = np.array(metadata['scaler_scale'])
+                self.scaler.n_features_in_ = len(metadata['scaler_mean'])
+                
+                print("Pricing model and metadata loaded successfully")
+                self.root.after(0, lambda: self.update_model_status("Models loaded successfully", "green"))
+            else:
+                error_msg = "Pricing model or metadata not found"
+                print(error_msg)
+                self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "orange"))
+        except Exception as e:
+            error_msg = f"Error loading pricing model: {str(e)}"
+            print(error_msg)
+            self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
+
+    def create_ui(self):
+        """Create the UI elements"""
+        top_frame = ttk.Frame(self.main_frame)
+        top_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        ttk.Label(top_frame, text="GreenSort Waste Classification and Pricing", 
+                  font=("Arial", 20, "bold")).pack(side=tk.LEFT)
+        
+        self.model_status = ttk.Label(top_frame, text="Loading models...", 
+                                      font=("Arial", 10), foreground="orange")
+        self.model_status.pack(side=tk.RIGHT, padx=10)
+        
+        notebook = ttk.Notebook(self.main_frame)
+        notebook.pack(fill=tk.BOTH, expand=True)
+        
+        self.classify_tab = ttk.Frame(notebook, padding=10)
+        notebook.add(self.classify_tab, text="Classify Waste")
+        
+        about_tab = ttk.Frame(notebook, padding=10)
+        notebook.add(about_tab, text="About")
+        
+        self.setup_classify_tab()
+        self.setup_about_tab(about_tab)
+        
+        footer = ttk.Frame(self.main_frame)
+        footer.pack(fill=tk.X, pady=(20, 0))
+        ttk.Label(footer, text="© 2025 GreenSort. All rights reserved.").pack(side=tk.LEFT)
+        ttk.Label(footer, text="v1.0.0").pack(side=tk.RIGHT)
+        
+        self.root.bind("<Configure>", self.on_window_resize)
+
+    def on_window_resize(self, event):
+        """Handle window resize events to redisplay image if needed"""
+        if hasattr(self, 'last_width') and hasattr(self, 'last_height'):
+            if (abs(self.last_width - self.root.winfo_width()) > 20 or 
+                abs(self.last_height - self.root.winfo_height()) > 20):
+                if hasattr(self, 'selected_image_path') and self.selected_image_path:
+                    self.display_image(self.selected_image_path)
+                self.last_width = self.root.winfo_width()
+                self.last_height = self.root.winfo_height()
+        else:
+            self.last_width = self.root.winfo_width()
+            self.last_height = self.root.winfo_height()
+
+    def setup_classify_tab(self):
+        """Setup the classification tab UI"""
+        left_panel = ttk.Frame(self.classify_tab)
+        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+            
+        img_frame = ttk.LabelFrame(left_panel, text="Waste Image", padding=10)
+        img_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+            
+        self.img_canvas = tk.Canvas(img_frame, bg="white", bd=0, highlightthickness=0, width=400, height=300)
+        self.img_canvas.pack(fill=tk.BOTH, expand=True)
+            
+        self.img_canvas.update()
+            
+        self.no_img_label = ttk.Label(self.img_canvas, text="No image selected", 
+                                    font=("Arial", 12))
+        self.no_img_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+                
+        control_frame = ttk.Frame(left_panel)
+        control_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        self.select_btn = ttk.Button(control_frame, text="Select Image", 
+                                     command=self.select_image)
+        self.select_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        inputs_frame = ttk.Frame(control_frame)
+        inputs_frame.pack(side=tk.RIGHT)
+        
+        qty_frame = ttk.Frame(inputs_frame)
+        qty_frame.pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Label(qty_frame, text="Quantity (kg):").pack(side=tk.LEFT, padx=(0, 5))
+        self.quantity_var = tk.StringVar(value="1.0")
+        self.quantity_spinbox = ttk.Spinbox(
+            qty_frame, 
+            from_=0.1, 
+            to=100.0, 
+            textvariable=self.quantity_var, 
+            width=5, 
+            increment=0.1
+        )
+        self.quantity_spinbox.pack(side=tk.LEFT)
+        
+        dist_frame = ttk.Frame(inputs_frame)
+        dist_frame.pack(side=tk.LEFT)
+        ttk.Label(dist_frame, text="Distance (km):").pack(side=tk.LEFT, padx=(0, 5))
+        self.distance_var = tk.StringVar(value="10.0")
+        self.distance_spinbox = ttk.Spinbox(
+            dist_frame, 
+            from_=0.1, 
+            to=500.0, 
+            textvariable=self.distance_var, 
+            width=5, 
+            increment=0.1
+        )
+        self.distance_spinbox.pack(side=tk.LEFT)
+        
+        self.classify_btn = ttk.Button(left_panel, text="Classify Waste", 
+                                      command=self.classify_image, state=tk.DISABLED)
+        self.classify_btn.pack(fill=tk.X)
+        
+        self.progress = ttk.Progressbar(left_panel, variable=self.progress_var, 
+                                       mode='determinate')
+        self.progress.pack(fill=tk.X, pady=(10, 0))
+        
+        right_panel = ttk.LabelFrame(self.classify_tab, text="Classification Results", padding=10)
+        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        
+        self.predictions_frame = ttk.Frame(right_panel)
+        self.predictions_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(self.predictions_frame, text="No results available",
+                 font=("Arial", 12, "italic")).pack(pady=20)
+        
+        self.price_frame = ttk.LabelFrame(right_panel, text="Price Calculation", padding=10)
+        self.price_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.selected_image_path = None
+        self.tk_image = None
+        self.original_image = None
+        self.processed_image = None
+        self.current_quantity = 1.0
+        self.current_distance = 10.0
+
+    def setup_about_tab(self, tab):
+        """Setup the about tab with project information"""
+        about_text = tk.Text(tab, wrap=tk.WORD, font=("Arial", 11), 
+                            height=20, width=70, padx=10, pady=10)
+        about_text.pack(fill=tk.BOTH, expand=True)
+        
+        about_content = """
+        # GreenSort - Waste Classification and Pricing System
+        
+        GreenSort is an intelligent waste classification and pricing system that uses Computer Vision to automatically identify 
+        different types of waste materials from images and predict their total value based on weight and delivery distance.
+        
+        ## Features
+        
+        - Classify waste into 9 different categories
+        - Estimate the value of recyclable materials using a neural network
+        - Calculate total price including delivery costs
+        - Optimize waste management and recycling processes
+        
+        ## Waste Categories
+        
+        1. Cardboard - Rp 2,000/kg
+        2. Food Organics - Rp 500/kg
+        3. Glass - Rp 1,500/kg
+        4. Metal - Rp 8,000/kg
+        5. Miscellaneous Trash - Rp 300/kg
+        6. Paper - Rp 2,500/kg
+        7. Plastic - Rp 4,000/kg
+        8. Textile Trash - Rp 1,000/kg
+        9. Vegetation - Rp 600/kg
+        
+        ## How to Use
+        
+        1. Select an image of waste material using the "Select Image" button
+        2. Set the quantity in kilograms and delivery distance in kilometers
+        3. Click "Classify Waste" to analyze the image and predict the price
+        4. View the classification results and price estimation
+        
+        ## Dataset
+        
+        This application is trained on the RealWaste dataset from the UCI Machine Learning Repository:
+        https://archive.ics.uci.edu/dataset/908/realwaste
+        """
+        
+        about_text.insert(tk.END, about_content)
+        about_text.config(state=tk.DISABLED)
+
     def update_model_status(self, status_text, color):
         """Update the model status text and color"""
         self.model_status.config(text=status_text, foreground=color)
-        if color == "green" or color == "orange":
+        if color == "green" and self.classification_model and self.pricing_model:
             self.classify_btn.config(state=tk.NORMAL)
-    
+
     def select_image(self):
         """Open file dialog to select an image"""
         file_path = filedialog.askopenfilename(
@@ -348,70 +371,47 @@ class GreenSortApp:
         if file_path:
             self.selected_image_path = file_path
             try:
-                # Validate image before attempting to display
                 test_image = Image.open(file_path)
-                test_image.verify()  # Verify it's a valid image
+                test_image.verify()
                 self.display_image(file_path)
-                if self.model:
+                if self.classification_model:
                     self.classify_btn.config(state=tk.NORMAL)
             except Exception as e:
-                messagebox.showerror("Invalid Image", f"The selected file is not a valid image: {str(e)}")
+                error_msg = f"The selected file is not a valid image: {str(e)}"
+                messagebox.showerror("Invalid Image", error_msg)
                 self.selected_image_path = None
-    
+
     def display_image(self, img_path):
         """Display the selected image on the canvas"""
         try:
-            # Force update before getting dimensions
             self.root.update_idletasks()
-            
-            # Load the original image and keep a reference
-            try:
-                self.original_image = Image.open(img_path)
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to open image file: {str(e)}")
-                return
-            
-            # Get canvas dimensions
+            self.original_image = Image.open(img_path)
             canvas_width = self.img_canvas.winfo_width()
             canvas_height = self.img_canvas.winfo_height()
             
-            # Ensure minimum canvas dimensions
             if canvas_width < 100:
                 canvas_width = 400
             if canvas_height < 100:
                 canvas_height = 300
             
-            # Calculate the new size to fit in canvas while preserving aspect ratio
             img_width, img_height = self.original_image.size
             ratio = min(canvas_width/img_width, canvas_height/img_height)
             new_width = int(img_width * ratio)
             new_height = int(img_height * ratio)
             
-            # Resize the image using LANCZOS resampling
             try:
                 resized_img = self.original_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
             except AttributeError:
-                # For older PIL versions
                 resized_img = self.original_image.resize((new_width, new_height), Image.LANCZOS)
             
-            # Convert to PhotoImage for display
-            try:
-                self.tk_image = ImageTk.PhotoImage(resized_img)
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to convert image: {str(e)}")
-                return
-            
-            # Clear canvas and display image
+            self.tk_image = ImageTk.PhotoImage(resized_img)
             self.img_canvas.delete("all")
-            # Center the image
             x_pos = canvas_width // 2
             y_pos = canvas_height // 2
             self.img_canvas.create_image(x_pos, y_pos, image=self.tk_image, anchor=tk.CENTER, tags="image")
             
-            # Hide the "No image selected" label
             self.no_img_label.place_forget()
             
-            # Print debug info
             print(f"Image displayed: {img_path}")
             print(f"Canvas size: {canvas_width}x{canvas_height}")
             print(f"Original size: {img_width}x{img_height}")
@@ -419,53 +419,67 @@ class GreenSortApp:
             
         except Exception as e:
             error_msg = f"Could not display image: {str(e)}\n{traceback.format_exc()}"
-            print(error_msg)  # Log to console
+            print(error_msg)
             messagebox.showerror("Error", error_msg)
-    
+
+    def predict_price(self, jenis_sampah, berat, jarak, harga_pasar):
+        """Predict total price using the pricing model"""
+        if not self.pricing_model or not self.encoder or not self.scaler:
+            raise ValueError("Pricing model or preprocessing components not loaded")
+        
+        if jenis_sampah not in CATEGORIES:
+            raise ValueError(f"Invalid waste type. Choose from: {CATEGORIES}")
+        
+        new_data = pd.DataFrame({
+            'Jenis_Sampah': [jenis_sampah],
+            'Berat': [berat],
+            'Jarak_Pengiriman': [jarak],
+            'Harga_Pasar': [harga_pasar]
+        })
+        
+        encoded_sampah = self.encoder.transform(new_data[['Jenis_Sampah']])
+        numeric_data = self.scaler.transform(new_data[['Berat', 'Jarak_Pengiriman', 'Harga_Pasar']])
+        features = np.hstack([encoded_sampah, numeric_data])
+        
+        prediksi_harga = self.pricing_model.predict(features, verbose=0)
+        return max(prediksi_harga[0][0], 0)
+
     def classify_image(self):
         """Classify the selected waste image"""
-        if not self.selected_image_path or not self.model:
-            messagebox.showwarning("Warning", "Please select an image and ensure model is loaded")
+        if not self.selected_image_path or not self.classification_model:
+            messagebox.showwarning("Warning", "Please select an image and ensure classification model is loaded")
             return
         
-        # Disable classify button and show progress
         self.classify_btn.config(state=tk.DISABLED)
         self.progress_var.set(10)
         
-        # Get the quantity directly from the spinbox widget
         try:
-            # Force an update to ensure we get the current value
             self.root.update_idletasks()
-            quantity_str = self.quantity_spinbox.get()
-            quantity = float(quantity_str)
-            print(f"Spinbox direct value: {quantity_str}, Parsed quantity: {quantity}")  # Debug
-            
-            # Only update if valid
+            quantity = float(self.quantity_spinbox.get())
             if quantity > 0:
                 self.current_quantity = quantity
             else:
                 self.current_quantity = 1.0
-                print("Invalid quantity (<=0), using default")
         except ValueError:
             self.current_quantity = 1.0
-            print(f"Failed to parse quantity from '{quantity_str}', using default 1.0")
         
-        print(f"Final quantity for classification: {self.current_quantity}")  # Debug
+        try:
+            distance = float(self.distance_spinbox.get())
+            if distance > 0:
+                self.current_distance = distance
+            else:
+                self.current_distance = 10.0
+        except ValueError:
+            self.current_distance = 10.0
         
-        # Store a copy for the thread to use
-        quantity = self.current_quantity
-        
-        # Start classification in a separate thread with a copy of the quantity
-        thread = threading.Thread(target=self.process_classification, args=(quantity,))
+        thread = threading.Thread(target=self.process_classification, 
+                               args=(self.current_quantity, self.current_distance))
         thread.daemon = True
         thread.start()
-    
-    def process_classification(self, quantity):
-        """Process the image classification in a separate thread"""
+
+    def process_classification(self, quantity, distance):
+        """Process the image classification and price prediction"""
         try:
-            print(f"Process classification started with quantity: {quantity}")  # Debug
-            
-            # Preprocess the image
             self.root.after(0, lambda: self.progress_var.set(20))
             
             img = image.load_img(self.selected_image_path, target_size=(224, 224))
@@ -476,42 +490,42 @@ class GreenSortApp:
             
             self.root.after(0, lambda: self.progress_var.set(40))
             
-            # Make prediction
-            prediction = self.model.predict(img_array)
+            prediction = self.classification_model.predict(img_array)
             
             self.root.after(0, lambda: self.progress_var.set(70))
             
-            # Get predicted class and confidence
             predicted_class_index = np.argmax(prediction[0])
             predicted_class = CATEGORIES[predicted_class_index]
             confidence = prediction[0][predicted_class_index] * 100
             
-            # Get top 3 predictions
             top_indices = prediction[0].argsort()[-3:][::-1]
             top_predictions = [(CATEGORIES[i], prediction[0][i] * 100) for i in top_indices]
             
+            price_per_unit = PRICE_PER_KG.get(predicted_class, 0)
+            total_price = 0
+            if self.pricing_model:
+                try:
+                    total_price = self.predict_price(predicted_class, quantity, distance, price_per_unit)
+                except Exception as e:
+                    error_msg = f"Price prediction failed: {str(e)}"
+                    print(error_msg)
+                    total_price = price_per_unit * quantity
+            
             self.root.after(0, lambda: self.progress_var.set(90))
             
-            # Pass quantity to display_results using lambda to ensure it's captured correctly
-            final_quantity = quantity  # Make a copy to be sure
-            print(f"Quantity before display_results: {final_quantity}")  # Debug
-            
-            # Use lambda to capture the current value of final_quantity
-            self.root.after(0, lambda q=final_quantity: self.display_results(
-                predicted_class, confidence, top_predictions, q))
+            self.root.after(0, lambda: self.display_results(
+                predicted_class, confidence, top_predictions, quantity, distance, price_per_unit, total_price))
             
         except Exception as e:
             error_msg = f"Classification failed: {str(e)}\n{traceback.format_exc()}"
-            print(error_msg)  # Log to console for debugging
-            self.root.after(0, lambda: messagebox.showerror("Error", error_msg))
+            print(error_msg)
+            self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
             self.root.after(0, lambda: self.classify_btn.config(state=tk.NORMAL))
         finally:
             self.root.after(0, lambda: self.progress_var.set(0))
-    
-    def display_results(self, predicted_class, confidence, top_predictions, quantity):
-        """Display the classification results"""
-        print(f"Displaying results with quantity: {quantity}")  # Debug
-        
+
+    def display_results(self, predicted_class, confidence, top_predictions, quantity, distance, price_per_unit, total_price):
+        """Display the classification and pricing results"""
         self.classify_btn.config(state=tk.NORMAL)
         
         for widget in self.predictions_frame.winfo_children():
@@ -571,9 +585,6 @@ class GreenSortApp:
             ttk.Label(alt_item, text=f"{class_name}", font=("Arial", 11)).pack(side=tk.LEFT)
             ttk.Label(alt_item, text=f"{prob:.2f}%", font=("Arial", 10)).pack(side=tk.RIGHT)
         
-        price_per_unit = PRICE_PER_KG.get(predicted_class, 0)
-        total_price = price_per_unit * quantity
-        
         price_table = ttk.Frame(self.price_frame)
         price_table.pack(fill=tk.X, pady=10)
         
@@ -592,17 +603,22 @@ class GreenSortApp:
         ttk.Label(row3, text="Quantity:", font=("Arial", 11)).pack(side=tk.LEFT)
         ttk.Label(row3, text=f"{quantity:.2f} kg", font=("Arial", 11)).pack(side=tk.RIGHT)
         
+        row4 = ttk.Frame(price_table)
+        row4.pack(fill=tk.X, pady=2)
+        ttk.Label(row4, text="Delivery Distance:", font=("Arial", 11)).pack(side=tk.LEFT)
+        ttk.Label(row4, text=f"{distance:.2f} km", font=("Arial", 11)).pack(side=tk.RIGHT)
+        
         ttk.Separator(self.price_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=5)
         
-        row4 = ttk.Frame(price_table)
-        row4.pack(fill=tk.X, pady=5)
-        ttk.Label(row4, text="TOTAL VALUE:", font=("Arial", 12, "bold")).pack(side=tk.LEFT)
-        ttk.Label(row4, text=f"Rp {total_price:,.0f}", 
+        row5 = ttk.Frame(price_table)
+        row5.pack(fill=tk.X, pady=5)
+        ttk.Label(row5, text="TOTAL VALUE:", font=("Arial", 12, "bold")).pack(side=tk.LEFT)
+        ttk.Label(row5, text=f"Rp {total_price:,.0f}", 
                  font=("Arial", 14, "bold"), foreground="#27ae60").pack(side=tk.RIGHT)
         
         if self.processed_image is not None:
             self.root.after(0, self.show_processed_image)
-    
+
     def show_processed_image(self):
         """Show the processed image used for classification"""
         processed_window = tk.Toplevel(self.root)
@@ -627,13 +643,10 @@ class GreenSortApp:
 def main():
     """Main function to run the application"""
     try:
-        # Configure Tkinter styles
         style = ttk.Style()
-        
         if "clam" in style.theme_names():
             style.theme_use("clam")
             
-        # Create custom styles for widgets
         style.configure("TFrame", background="#f0f0f0")
         style.configure("Card.TFrame", background="#ffffff", relief="ridge", borderwidth=1)
         style.configure("TButton", font=("Arial", 11))
@@ -643,7 +656,6 @@ def main():
     except Exception as e:
         print(f"Warning: Could not set all theme settings: {str(e)}")
     
-    # Create and run the application
     root = tk.Tk()
     app = GreenSortApp(root)
     root.mainloop()
