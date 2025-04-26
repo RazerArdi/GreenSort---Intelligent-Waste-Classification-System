@@ -7,19 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [4.1.0] - 2025-04-27
+## [4.2.0] - 2025-04-28
 > Created by **Bayu Ardiyansyah**
 
 ### 🎉 Added
-- Enhanced error handling for model loading in `testing.py` to improve robustness of the GUI tool.
-- Improved model status updates in `testing.py` to provide clearer feedback on classification and pricing model loading.
+- Web application in `web/` directory for browser-based waste classification and pricing using TensorFlow.js.
+- Detailed web deployment instructions in `README.md` with sample HTML, JavaScript, and CSS.
 
 ### 🛠️ Changed
-- Updated `testing.py` to ensure consistent model loading status display, setting green status only when both classification and pricing models load successfully.
+- Updated `README.md` with corrected pricing table and enhanced project structure for web support.
 
 ### 🐛 Fixed
-- Resolved TensorFlow model loading error in `testing.py` by specifying `custom_objects` for `mse` loss function in pricing model (`greensort_price_model_tf.h5`).
-- Fixed Tkinter callback `NameError` in `testing.py` by properly capturing exception messages in lambda functions for asynchronous status updates.
+- _N/A_
 
 ### 🗑️ Removed
 - _N/A_
