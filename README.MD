@@ -28,16 +28,20 @@ GreenSort/
 ├── data/
 │   └── realwaste/               # RealWaste dataset (download separately)
 ├── models/
-│   └── greensort_model.h5       # Trained Keras model
-│   └── tfjs_model/              # TensorFlow.js model for browser deployment
+│   ├── greensort_model.h5       # Trained Keras model
+│   ├── greensort_price_model_tf.h5  # Price prediction model
+│   ├── preprocessing_metadata.json  # Metadata for preprocessing
+│   └── tfjs_model/              # TensorFlow.js model for browser deployment(ComputerVision)
 ├── notebooks/
-│   └── CapstoneDBS.ipynb # Jupyter notebook for training and evaluation
+│   └── CapstoneDBS_ComputerVision.ipynb.
+|   └── CapstoneDBS_PricingModel.ipynb
 ├── src/
 │   └── utils.py                 # Helper functions for preprocessing and evaluation
 ├── testing.py                   # GUI tool for testing the model
 ├── requirements.txt             # Python dependencies
 ├── greensort_icon.ico           # Optional app icon
 ├── LICENSE                      # MIT License file
+├── CHANGELOG.md                 # Version history and changes
 └── README.md                    # Project documentation
 ```
 
@@ -80,6 +84,7 @@ GreenSort/
    seaborn>=0.12.0
    pillow>=9.5.0
    scikit-learn>=1.2.0
+   pandas>=2.0.0
    tk>=0.1.0           # For GUI (included with Python)
    ```
 
@@ -106,7 +111,17 @@ GreenSort/
   tfjs.converters.save_keras_model(model, 'models/tfjs_model')
   ```
 
-### 2. Testing with the GUI
+### 2. Price Prediction Model
+- The price prediction model uses a neural network to estimate waste prices based on:
+  - Waste type
+  - Weight (kg)
+  - Shipping distance (km)
+  - Market price (IDR/kg)
+- Evaluation metrics:
+  - Mean Absolute Error (MAE): ~Rp5,000
+  - R² Score: 0.95
+
+### 3. Testing with the GUI
 - Run the interface:
   ```bash
   python testing.py
@@ -121,9 +136,9 @@ GreenSort/
 - Example:
   - Image: plastic waste
   - Weight: 2.5 kg
-  - Output: “Plastic” with 95% confidence → Estimated value: IDR 10,000 (based on IDR 4,000/kg)
+  - Output: "Plastic" with 95% confidence → Estimated value: IDR 10,000 (based on IDR 4,000/kg)
 
-### 3. Web Deployment
+### 4. Web Deployment
 - Use the model in `models/tfjs_model/`
 - Example JavaScript code:
   ```javascript
@@ -138,22 +153,23 @@ GreenSort/
 
 | Category             | Price per kg (IDR) |
 |----------------------|--------------------|
-| Cardboard            | 2,000              |
-| Food Organics        | 500                |
-| Glass                | 1,500              |
-| Metal                | 8,000              |
-| Miscellaneous Trash  | 300                |
-| Paper                | 2,500              |
-| Plastic              | 4,000              |
-| Textile Trash        | 1,000              |
-| Vegetation           | 600                |
+| Cardboard            | 2,500              |
+| Food Organics        | 800                |
+| Glass                | 2,000              |
+| Metal                | 10,000             |
+| Miscellaneous Trash  | 500                |
+| Paper                | 3,000              |
+| Plastic              | 5,000              |
+| Textile Trash        | 1,500              |
+| Vegetation           | 1,000              |
 
-> *Note: Prices are for demonstration and may vary by region.*
+> *Note: Prices fluctuate based on market conditions. The model accounts for a ±20% price variation.*
 
 ---
 
 ## 📈 Model Performance
 
+### Image Classification Model (MobileNetV2)
 - **Architecture**: MobileNetV2 (fine-tuned)
 - **Dataset**: RealWaste (9 classes)
 - **Metrics**:
@@ -162,12 +178,22 @@ GreenSort/
   - Recall (avg): 89.8%
   - F1-Score (avg): 90.2%
 
+### Price Prediction Model
+- **Architecture**: Neural Network with Dropout
+- **Dataset**: Synthetic (1000 samples)
+- **Metrics**:
+  - MAE: ~Rp5,000
+  - R² Score: 0.95
+  - Relative Error: 2-3% of average price
+
 **Challenges**:
 - Visual similarity between classes (e.g., Paper vs. Cardboard)
+- Market price fluctuations affecting pricing model accuracy
 
 **Suggestions**:
 - Improve feature extraction
 - Use more advanced data augmentation
+- Incorporate real market data for price predictions
 
 ---
 
@@ -178,6 +204,7 @@ GreenSort/
 - **Chatbot assistant** for education and user support
 - **Model optimization** for edge devices (quantization, pruning)
 - **Dataset expansion** to increase robustness
+- **Real market data integration** for more accurate price predictions
 
 ---
 
@@ -192,6 +219,12 @@ We welcome contributions!
 5. Open a Pull Request
 
 Please follow the [Code of Conduct](CODE_OF_CONDUCT.md) and PEP 8 style guidelines.
+
+---
+
+## 📦 CHANGELOG
+
+All notable changes to this project are documented in the [CHANGELOG.md](CHANGELOG.md) file.
 
 ---
 
@@ -212,6 +245,7 @@ This project is licensed under the [MIT License](LICENSE)
 - [RealWaste Dataset](https://archive.ics.uci.edu/dataset/908/realwaste) — UCI Machine Learning Repository
 - [TensorFlow](https://www.tensorflow.org/)
 - [TensorFlow.js](https://www.tensorflow.org/js)
+- Kementerian Lingkungan Hidup dan Kehutanan (KLHK) for waste management data
 
 ---
 
