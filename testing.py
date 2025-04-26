@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """
 GreenSort - Waste Classification and Pricing Tool
 This script provides a GUI for testing the waste classification and pricing model.
