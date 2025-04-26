@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [4.2.0] - 2025-04-26 (1)
+## [4.2.0] - 2025-04-26 (3)
 > Created by **Bayu Ardiyansyah**
 
 ### 🎉 Added
@@ -25,9 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
----
-
-## [4.1.0] - 2025-04-27
+## [4.1.0] - 2025-04-26 (2)
 > Created by **Bayu Ardiyansyah**
 
 ### 🎉 Added
@@ -46,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [4.0.0] - 2025-04-26
+## [4.0.0] - 2025-04-26 (1)
 > Created by **Bayu Ardiyansyah**
 
 ### 🎉 Added
