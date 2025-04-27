@@ -79,7 +79,7 @@ class GreenSortApp:
     def load_classification_model(self):
         """Load the waste classification model"""
         try:
-            model_path = 'greensort_model.h5'
+            model_path = 'models/ComputerVision/greensort_model.h5'
             if os.path.exists(model_path):
                 self.classification_model = load_model(model_path)
                 self.root.after(0, lambda: self.update_model_status("Classification model loaded", "green"))
@@ -144,8 +144,8 @@ class GreenSortApp:
     def load_pricing_model(self):
         """Load the pricing model and preprocessing metadata"""
         try:
-            model_path = 'models/greensort_price_model_tf.h5'
-            metadata_path = 'models/preprocessing_metadata.json'
+            model_path = 'models/PriceEst/greensort_price_model_tf.h5'
+            metadata_path = 'models/PriceEst/preprocessing_metadata.json'
             
             if os.path.exists(model_path) and os.path.exists(metadata_path):
                 # Load the pricing model with custom objects

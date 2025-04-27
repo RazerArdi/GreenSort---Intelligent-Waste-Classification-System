@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.3.0] - 2025-04-27 
+> Created by **Muhammad Rofi'ul Arham**
+
+### 🎉 Added
+- Web application in `db/` directory for database.
+- Detailed web deployment instructions in `README.md` with sample SQL Database.
+
+### 🛠️ Changed
+- Updated `README.md` by adding database sql and improved project structure for web support.
+
+### 🐛 Fixed
+- _N/A_
+
+### 🗑️ Removed
+- _N/A_
+
+---
+
 ## [4.2.0] - 2025-04-26 (3)
 > Created by **Bayu Ardiyansyah**
 

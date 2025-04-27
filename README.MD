@@ -24,30 +24,34 @@ The model is trained using the [RealWaste dataset](https://archive.ics.uci.edu/d
 ---
 
 ## 🗂️ Project Structure
-```
+``` │, sudut ├── dan └──
 GreenSort/
 ├── data/
-│   └── realwaste/                     # RealWaste dataset (download separately)
+│   └── realwaste-main/
+│       └── realwaste/                      # RealWaste dataset (download separately)
 ├── models/
-│   ├── greensort_model.h5             # Trained Keras classification model
-│   ├── greensort_price_model_tf.h5    # Trained Keras pricing model
-│   ├── preprocessing_metadata.json    # Metadata for pricing model preprocessing
-│   └── tfjs_model/                    # TensorFlow.js models for browser deployment
+│   ├── ComputerVision/
+│   │   ├── greensort_model.h5              # Trained Keras classification model
+│   │   └── tfjs_model/                     # TensorFlow.js models for browser deployment
+│   ├── PriceEst/
+│       ├── greensort_price_model_tf.h5     # Trained Keras pricing model
+│       └── reprocessing_metadata.json      # Metadata for pricing model preprocessing
 ├── notebooks/
-│   ├── CapstoneDBS_ComputerVision.ipynb  # Notebook for classification model training
-│   └── CapstoneDBS_PricingModel.ipynb    # Notebook for pricing model training
+│   ├── CapstoneDBS_ComputerVision.ipynb    # Notebook for classification model training
+│   └── CapstoneDBS_PricingModel.ipynb      # Notebook for pricing model training
 ├── src/
-│   └── utils.py                       # Helper functions for preprocessing and evaluation
+│   └── utils.py                            # Helper functions for preprocessing and evaluation
 ├── web/
-│   ├── index.html                     # Web app entry point
-│   ├── app.js                         # JavaScript for model inference
-│   └── styles.css                     # Web app styling
-├── testing.py                         # GUI tool for desktop testing
-├── requirements.txt                   # Python dependencies
-├── greensort_icon.ico                 # Optional app icon
-├── LICENSE                            # MIT License file
-├── CHANGELOG.md                       # Version history and changes
-└── README.md                          # Project documentation
+│   ├── db/                                 # sql for database
+│   ├── index.html                          # Web app entry point
+│   ├── app.js                              # JavaScript for model inference
+│   └── styles.css                          # Web app styling
+├── testing.py                              # GUI tool for desktop testing
+├── requirements.txt                        # Python dependencies
+├── greensort_icon.ico                      # Optional app icon
+├── LICENSE                                 # MIT License file
+├── CHANGELOG.md                            # Version history and changes
+└── README.md                               # Project documentation
 ```
 
 ---
@@ -139,7 +143,7 @@ GreenSort/
   - Preprocess the dataset
   - Train the models (MobileNetV2 for classification, neural network for pricing)
   - Evaluate metrics (accuracy, MAE, R²)
-- Save the models to `models/greensort_model.h5` and `models/greensort_price_model_tf.h5`.
+- Save the models to `../models/ComputerVision/greensort_model.h5` and `../models/PriceEst/greensort_price_model_tf.h5`.
 - Convert to TensorFlow.js:
   ```python
   import tensorflowjs as tfjs
@@ -313,6 +317,52 @@ GreenSort/
   ```
   - Open `http://localhost:8080` in a browser.
   - Upload an image, set quantity and distance, and click "Classify Waste" to see results.
+
+### 4. Database
+- Create a database `greensort.sql`
+  ![ERD GreenSort](web/db/erd_greensort.png)
+
+- **Sample** `db/greensort.sql`:
+  ```sql  
+  -- Table: waste_categories
+  CREATE TABLE waste_categories (
+    category_id INT PRIMARY KEY AUTO_INCREMENT,
+    category_name VARCHAR(50) NOT NULL UNIQUE,
+    base_market_price DECIMAL(10,2) NOT NULL
+  );
+     
+  -- Table: users (optional)
+  CREATE TABLE users (
+    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+  
+  -- Table: classifications
+  CREATE TABLE classifications (
+    classification_id INT PRIMARY KEY AUTO_INCREMENT,
+    image_path VARCHAR(255) NOT NULL,
+    category_id INT NOT NULL,
+    confidence DECIMAL(5,2) NOT NULL,
+    classification_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id INT,
+    FOREIGN KEY (category_id) REFERENCES waste_categories(category_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+  );
+
+  -- Table: price_predictions
+  CREATE TABLE price_predictions (
+    prediction_id INT PRIMARY KEY AUTO_INCREMENT,
+    classification_id INT NOT NULL,
+    weight_kg DECIMAL(10,2) NOT NULL,
+    delivery_distance_km DECIMAL(10,2) NOT NULL,
+    market_price DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    prediction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (classification_id) REFERENCES classifications(classification_id)
+  );
+  ```
 
 ---
 
