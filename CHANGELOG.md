@@ -94,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🎉 Added
 - Pre-trained MobileNetV2 model for image-based waste classification
-- Jupyter Notebook for model training (`CapstoneDBS.ipynb`)
+- Jupyter Notebook for model training (`CapstoneDBS_ComputerVision.ipynb`)
 
 ### 🛠️ Changed
 - _N/A_
@@ -103,16 +103,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved accuracy of MobileNetV2 model for garbage classification up to 89%
 
 ### 🗑️ Removed
-- Removed the InceptionV3 model from the model training file (`CapstoneDBS.ipynb`), visible in the preview file only (`preview_inception.ipynb`)
-
----
+- Removed the InceptionV3 model from the model training file (`CapstoneDBS_ComputerVision.ipynb`), visible in the preview file only (`preview_inception.ipynb`)
 
 ## [2.0.0] - 2025-04-22
 > Created by **Bayu Ardiyansyah** and **Muhammad Rofi'ul Arham**
 
 ### 🎉 Added
 - Added **InceptionV3** model for trash classification, as a comparison with previous models (MobileNetV2 and custom CNN)
-- Support for InceptionV3 model training in `CapstoneDBS.ipynb`
+- Support for InceptionV3 model training in `CapstoneDBS_ComputerVision.ipynb`
 - Expanded EDA visualization in training notebook
 
 ### 🛠️ Changed
@@ -133,7 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🎉 Added
 - Initial version of the **GreenSort** waste classification system
 - Pre-trained MobileNetV2 model for image-based waste classification
-- Jupyter Notebook for model training (`CapstoneDBS.ipynb`)
+- Jupyter Notebook for model training (`CapstoneDBS_ComputerVision.ipynb`)
 - GUI-based testing tool (`testing.py`) for local image testing
 - TensorFlow.js model export for web/browser use
 - Sample price estimation and shipping cost integration (static logic)
