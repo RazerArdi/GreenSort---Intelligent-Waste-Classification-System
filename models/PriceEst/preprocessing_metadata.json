@@ -1,1 +1,0 @@
-{"sampah_types": ["Cardboard", "Food Organics", "Glass", "Metal", "Miscellaneous Trash", "Paper", "Plastic", "Textile Trash", "Vegetation"], "scaler_mean": [25.66955048439451, 104.564232960755, 2870.2116151603805], "scaler_scale": [14.349566118511362, 54.899120056761646, 2764.898126356122], "numeric_features": ["Berat", "Jarak_Pengiriman", "Harga_Pasar"]}

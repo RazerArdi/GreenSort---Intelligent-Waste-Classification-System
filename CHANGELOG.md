@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.0.1] - 2025-04-28 
+> Created by **Bayu Ardiyansyah**
+
+### 🎉 Added
+- Initiate `CapstoneDBS_SystemRecommendation.ipynb` as initial prototype
+
+### 🛠️ Changed
+- _N/A_
+
+### 🐛 Fixed
+- Retrain the `CapstoneDBS_ComputerVision.ipynb` model and save the model.
+
+### 🗑️ Removed
+- _N/A_
+
+---
+
 ## [4.3.0] - 2025-04-27 
 > Created by **Muhammad Rofi'ul Arham**
 
