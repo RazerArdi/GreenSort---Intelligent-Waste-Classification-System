@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.5.0] - 2025-04-28 
+> Created by **Bayu Ardiyansyah**
+
+### 🎉 Added
+-  System recomendation in `CapstoneDBS_SistemRekomendasi.ipynb` at testing 2 ()
+
+### 🛠️ Changed
+-  _N/A_
+
+### 🐛 Fixed
+- _N/A_
+
+### 🗑️ Removed
+- _N/A_
+
+---
+
 ## [5.4.0] - 2025-04-28 
 > Created by **Bayu Ardiyansyah**
 
