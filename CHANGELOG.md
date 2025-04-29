@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.4.0] - 2025-04-28 
+> Created by **Bayu Ardiyansyah**
+
+### 🎉 Added
+- add `dataset_rekomendasi_daur_ulang.json` as system recomendation dataset
+- Setting up for Recomendation models `models/Sistemrekomendasi/dataset.json` and `models/Sistemrekomendasi/models/recycling_recommendation_model.h5`
+
+### 🛠️ Changed
+- Integration of`testing.py` with system recomendation (UnFixed(issue))
+- Change `CapstoneDBS_SystemRecommendation.ipynb` as The new prototype (New one)
+
+### 🐛 Fixed
+- _N/A_
+
+### 🗑️ Removed
+- _N/A_
+
+---
+
 ## [5.0.1] - 2025-04-28 
 > Created by **Bayu Ardiyansyah**
 
