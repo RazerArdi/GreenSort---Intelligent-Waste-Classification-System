@@ -1,6 +1,6 @@
 """
-GreenSort - Waste Classification and Pricing Tool
-This script provides a GUI for testing the waste classification and pricing model.
+GreenSort - Waste Classification, Pricing and Recommendation Tool
+This script provides a GUI for testing the waste classification pricing, and recommendation model.
 """
 
 import os
@@ -50,11 +50,12 @@ class GreenSortApp:
     def __init__(self, root):
         """Initialize the application"""
         self.root = root
-        self.root.title("GreenSort - Waste Classification and Pricing Tool")
+        self.root.title("GreenSort - Waste Classification, Pricing, and Recommendation Tool")
         self.root.geometry("900x700")
         self.root.resizable(True, True)
         self.root.configure(bg="#f0f0f0")
         
+        # Attempt to set window icon
         try:
             self.root.iconbitmap("greensort_icon.ico")
         except:
@@ -62,7 +63,6 @@ class GreenSortApp:
             
         # Initialize models and preprocessing
         self.classification_model = None
-        self.pricing_model = None
         self.recommendation_model = None
         self.recommendation_df = None
         self.encoder = None
@@ -83,29 +83,24 @@ class GreenSortApp:
         self.load_class_model_thread.daemon = True
         self.load_class_model_thread.start()
         
-        # Load pricing model and metadata
-        self.load_pricing_model()
-        
         # Load recommendation model and dataset
         self.load_recommendation_model()
-
+    
     def load_classification_model(self):
         """Load the waste classification model"""
         try:
             model_path = 'models/ComputerVision/greensort_model.h5'
             if os.path.exists(model_path):
-                self.classification_model = load_model(model_path)
-                self.root.after(0, lambda: self.update_model_status("Classification model loaded", "green"))
+                self.model = load_model(model_path)
+                self.root.after(0, lambda: self.update_model_status("Model loaded successfully", "green"))
             else:
-                self.root.after(0, lambda: self.update_model_status("Classification model not found", "red"))
+                self.root.after(0, lambda: self.update_model_status("Model file not found", "red"))
                 self.root.after(1000, self.locate_model)
         except Exception as e:
-            error_msg = f"Error loading classification model: {str(e)}"
-            logging.error(error_msg)
-            self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
-
+            self.root.after(0, lambda: self.update_model_status(f"Error loading model: {str(e)}", "red"))
+    
     def locate_model(self):
-        """Ask user to locate the classification model file"""
+        """Ask user to locate the model file"""
         response = messagebox.askyesno("Model Not Found", 
                                       "The model file 'greensort_model.h5' was not found.\n\n"
                                       "Do you want to locate the model file manually?")
@@ -116,15 +111,13 @@ class GreenSortApp:
             )
             if model_path:
                 try:
-                    self.classification_model = load_model(model_path)
-                    self.update_model_status("Classification model loaded successfully", "green")
+                    self.model = load_model(model_path)
+                    self.update_model_status("Model loaded successfully", "green")
                 except Exception as e:
-                    error_msg = f"Error loading classification model: {str(e)}"
-                    logging.error(error_msg)
-                    self.update_model_status(error_msg, "red")
+                    self.update_model_status(f"Error loading model: {str(e)}", "red")
         else:
             self.create_test_model()
-
+    
     def create_test_model(self):
         """Create a simple test model for demonstration"""
         try:
@@ -147,246 +140,185 @@ class GreenSortApp:
                 metrics=['accuracy']
             )
             
-            self.classification_model = model
-            self.root.after(0, lambda: self.update_model_status("Demo classification model created (untrained)", "orange"))
+            self.model = model
+            self.root.after(0, lambda: self.update_model_status("Demo model created (untrained)", "orange"))
             self.root.after(0, lambda: messagebox.showwarning("Demo Mode", 
-                                                             "Running in demo mode with an untrained classification model.\n"
+                                                             "Running in demo mode with an untrained model.\n"
                                                              "Classifications will be random and not meaningful."))
         except Exception as e:
-            error_msg = f"Error creating demo classification model: {str(e)}"
-            logging.error(error_msg)
-            self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
-
-    def load_pricing_model(self):
-        """Load the pricing model and preprocessing metadata"""
-        try:
-            model_path = 'models/PriceEst/greensort_price_model_tf.h5'
-            metadata_path = 'models/PriceEst/preprocessing_metadata.json'
+            self.root.after(0, lambda: self.update_model_status(f"Error creating demo model: {str(e)}", "red"))
             
-            if os.path.exists(model_path) and os.path.exists(metadata_path):
-                self.pricing_model = load_model(model_path, custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
-                
-                with open(metadata_path, 'r') as f:
-                    metadata = json.load(f)
-                
-                self.encoder = OneHotEncoder(sparse_output=False, categories=[metadata['sampah_types']])
-                self.encoder.fit(np.array(metadata['sampah_types']).reshape(-1, 1))
-                
-                self.scaler = StandardScaler()
-                self.scaler.mean_ = np.array(metadata['scaler_mean'])
-                self.scaler.scale_ = np.array(metadata['scaler_scale'])
-                self.scaler.n_features_in_ = len(metadata['scaler_mean'])
-                
-                logging.info("Pricing model and metadata loaded successfully")
-                self.root.after(0, lambda: self.update_model_status("Pricing model loaded", "green"))
-            else:
-                error_msg = "Pricing model or metadata not found"
-                logging.error(error_msg)
-                self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "orange"))
-        except Exception as e:
-            error_msg = f"Error loading pricing model: {str(e)}"
-            logging.error(error_msg)
-            self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
-
     def load_recommendation_model(self):
-        """Load the recommendation model and dataset"""
+        """Load the recommendation model and dataset with robust error handling"""
         try:
-            model_path = '/mnt/d/PROJECT/CapstoneProjectDBSteam/models/Sistemrekomendasi/models/recycling_recommendation_model.h5'
-            dataset_path = '/mnt/d/PROJECT/CapstoneProjectDBSteam/models/Sistemrekomendasi/dataset.json'
-            
-            # Check model file
-            if not os.path.exists(model_path):
-                error_msg = f"Recommendation model not found at {model_path}"
-                logging.error(error_msg)
-                self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
+            # Define path
+            model_path = 'models/Sistemrekomendasi/models/recycling_recommendation_model.h5'
+            dataset_path = 'models/Sistemrekomendasi/dataset.json'
+
+            # Load model
+            if os.path.exists(model_path):
+                try:
+                    self.recommendation_model = load_model(
+                        model_path,
+                        custom_objects={'mse': tf.keras.losses.MeanSquaredError()}
+                    )
+                    logging.info(f"Recommendation model loaded from {model_path}")
+                except Exception as e:
+                    logging.error(f"Failed to load model from {model_path}: {str(e)}")
+                    self.root.after(0, lambda: self.update_model_status("Failed to load recommendation model", "orange"))
+                    self.create_fallback_recommendation_system()
+                    return
+            else:
+                logging.error("Recommendation model file not found")
+                self.root.after(0, lambda: self.update_model_status("Recommendation model not found", "orange"))
+                self.create_fallback_recommendation_system()
                 return
-            
-            # Check dataset file
-            if not os.path.exists(dataset_path):
-                error_msg = f"Recommendation dataset not found at {dataset_path}"
-                logging.error(error_msg)
-                self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
+
+            # Load dataset
+            if os.path.exists(dataset_path):
+                try:
+                    with open(dataset_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    self.recommendation_df = pd.DataFrame(data)
+                    logging.info(f"Recommendation dataset loaded from {dataset_path}")
+                except Exception as e:
+                    logging.error(f"Failed to load dataset from {dataset_path}: {str(e)}")
+                    self.root.after(0, lambda: self.update_model_status("Failed to load recommendation dataset", "orange"))
+                    self.create_fallback_recommendation_system()
+                    return
+            else:
+                logging.error("Recommendation dataset file not found")
+                self.root.after(0, lambda: self.update_model_status("Recommendation dataset not found", "orange"))
+                self.create_fallback_recommendation_system()
                 return
-            
-            # Load the recommendation model
-            self.recommendation_model = load_model(
-                model_path,
-                custom_objects={
-                    'mse': tf.keras.losses.MeanSquaredError(),
-                    'TextVectorization': tf.keras.layers.TextVectorization
-                }
-            )
-            logging.info(f"Recommendation model loaded from {model_path}")
-            
-            # Compile the model
-            self.recommendation_model.compile(
-                optimizer='adam',
-                loss='mse',
-                metrics=['mse']
-            )
-            logging.info("Recommendation model compiled successfully")
-            
-            # Load the dataset
-            with open(dataset_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            self.recommendation_df = pd.DataFrame(data)
-            logging.info(f"Recommendation dataset loaded from {dataset_path}")
-            
+
             # Verify dataset structure
-            required_columns = ['kategori', 'rekomendasi', 'berat_min_kg', 'berat_max_kg', 'combined_rekomendasi']
+            required_columns = ['kategori', 'rekomendasi', 'berat_min_kg', 'berat_max_kg']
             if not all(col in self.recommendation_df.columns for col in required_columns):
                 error_msg = f"Dataset missing required columns: {required_columns}"
                 logging.error(error_msg)
-                self.recommendation_df = None
-                self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
+                self.root.after(0, lambda: self.update_model_status(error_msg, "orange"))
+                self.create_fallback_recommendation_system()
                 return
-            
-            # Log dataset categories
-            dataset_categories = self.recommendation_df['kategori'].unique().tolist()
-            logging.info(f"Dataset categories: {dataset_categories}")
-            
-            # Test model with a sample input
-            try:
-                test_input = np.array(['Vegetation'], dtype=object)
-                self.recommendation_model.predict(test_input, verbose=0)
-                logging.info("Recommendation model test successful")
-            except Exception as e:
-                error_msg = f"Error testing recommendation model: {str(e)}"
-                logging.error(error_msg)
-                self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
-                return
-            
-            self.root.after(0, lambda: self.update_model_status("Recommendation model loaded", "green"))
-        except json.JSONDecodeError as e:
-            error_msg = f"Error parsing dataset JSON: {str(e)}"
-            logging.error(error_msg)
-            self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
+
+            # Add combined_rekomendasi column if it doesn't exist
+            if 'combined_rekomendasi' not in self.recommendation_df.columns:
+                self.recommendation_df['combined_rekomendasi'] = self.recommendation_df['rekomendasi'].apply(
+                    lambda x: " ".join(x) if isinstance(x, list) else str(x)
+                )
+
+            # Success
+            self.root.after(0, lambda: self.update_model_status("Models loaded successfully", "green"))
+
         except Exception as e:
-            error_msg = f"Error loading recommendation model or dataset: {str(e)}"
+            error_msg = f"Error in recommendation system setup: {str(e)}"
             logging.error(error_msg)
-            self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
+            self.root.after(0, lambda: self.update_model_status(error_msg, "orange"))
+            self.create_fallback_recommendation_system()
+
 
     def get_recommendation(self, input_kategori, input_berat_kg, tolerance=0.2):
-        """Generate recycling recommendations based on category and weight"""
-        if not self.recommendation_model or self.recommendation_df is None:
-            error_msg = "Recommendation model or dataset not loaded. Please check the application logs."
-            logging.error(error_msg)
-            return {"message": error_msg}
-        
-        # Map GreenSort categories to recommendation dataset categories
-        category_mapping = {
-            'Cardboard': 'Kardus',
-            'Food_Organics': 'Sampah Organik',
-            'Glass': 'Kaca',
-            'Metal': 'Logam',
-            'Miscellaneous_Trash': 'Sampah Lainnya',
-            'Paper': 'Kertas',
-            'Plastic': 'Plastik',
-            'Textile_Trash': 'Kain',
-            'Vegetation': 'Vegetation'
-        }
-        mapped_category = category_mapping.get(input_kategori, input_kategori)
-        
-        logging.info(f"Generating recommendation for input category: {input_kategori}, mapped to: {mapped_category}, weight: {input_berat_kg} kg")
-        
-        matching_rows = self.recommendation_df[self.recommendation_df['kategori'] == mapped_category]
-        if matching_rows.empty:
-            error_msg = f"Kategori '{mapped_category}' tidak ditemukan dalam dataset."
-            logging.warning(error_msg)
-            return {"message": error_msg}
-
         try:
-            # Validate and convert input category
-            if not isinstance(mapped_category, str) or not mapped_category.strip():
-                error_msg = f"Invalid category input: {mapped_category}"
-                logging.error(error_msg)
-                return {"message": error_msg}
-            input_array = [str(mapped_category).strip()]
-            logging.debug(f"Input array for prediction: {input_array}")
-            
-            # Predict with input category
-            input_vec = self.recommendation_model.predict(np.array(input_array, dtype=object), verbose=0)[0]
-            
-            # Validate and convert recommendation texts
-            rekomendasi_texts = [str(text).strip() for text in matching_rows['combined_rekomendasi'].values if str(text).strip()]
-            if not rekomendasi_texts:
-                error_msg = "No valid recommendation texts found for the category."
-                logging.error(error_msg)
-                return {"message": error_msg}
-            logging.debug(f"Recommendation texts for prediction (first 2): {rekomendasi_texts[:2]}")
-            
-            # Predict with recommendation texts
-            dataset_vecs = self.recommendation_model.predict(np.array(rekomendasi_texts, dtype=object), verbose=0)
-            
-            # Compute cosine similarity
-            cosine_sim = np.dot(dataset_vecs, input_vec) / (np.linalg.norm(dataset_vecs, axis=1) * np.linalg.norm(input_vec))
-            best_kategori = matching_rows.iloc[best_match_idx]['kategori']
-            rekomendasi_list = matching_rows.iloc[best_match_idx]['rekomendasi']
-            berat_min_kg = matching_rows.iloc[best_match_idx]['berat_min_kg']
-            berat_max_kg = matching_rows.iloc[best_match_idx]['berat_max_kg']
-            
-            min_tolerant = berat_min_kg * (1 - tolerance)
-            max_tolerant = berat_max_kg * (1 + tolerance)
-            
-            if input_berat_kg is None or not isinstance(input_berat_kg, (int, float)):
-                message = "Invalid weight input. Please provide a valid weight in kilograms."
-                logging.warning(message)
-            elif min_tolerant <= input_berat_kg <= max_tolerant:
+            # Mapping model categories to datasets
+            category_mapping = {
+                'Cardboard': 'Kardus',
+                'Food_Organics': 'Bahan Organik Makanan',
+                'Glass': 'Kaca',
+                'Metal': 'Logam',
+                'Miscellaneous_Trash': 'Sampah Lainnya',
+                'Paper': 'Kertas',
+                'Plastic': 'Plastik',
+                'Textile_Trash': 'Sampah Tekstil',
+                'Vegetation': 'Vegetasi'
+            }
+            mapped_category = category_mapping.get(input_kategori, input_kategori)
+
+            # Take the row that matches the category
+            matching_rows = self.recommendation_df[self.recommendation_df['kategori'] == mapped_category]
+            if matching_rows.empty:
+                return {"message": f"Kategori '{mapped_category}' tidak ditemukan dalam dataset."}
+
+            # Look for lines in the appropriate weight range
+            weight_match = matching_rows[
+                (matching_rows['berat_min_kg'] <= input_berat_kg) &
+                (input_berat_kg <= matching_rows['berat_max_kg'])
+            ]
+
+            if not weight_match.empty:
+                best_match_idx = weight_match.index[0]
                 message = ""
             else:
+                best_match_idx = matching_rows.index[0]
+                berat_min_kg = matching_rows.loc[best_match_idx]['berat_min_kg']
+                berat_max_kg = matching_rows.loc[best_match_idx]['berat_max_kg']
                 message = (
                     f"Berat sampah Anda ({input_berat_kg} kg) sedikit tidak sesuai dengan rekomendasi "
                     f"untuk kategori ini ({berat_min_kg} kg - {berat_max_kg} kg).\n\n"
                     "Namun, berikut adalah beberapa rekomendasi yang bisa diterapkan:\n"
                 )
-            
-            logging.info(f"Recommendation generated for {kategori}: {rekomendasi_list}")
+
+            best_kategori = matching_rows.loc[best_match_idx]['kategori']
+            rekomendasi_list = matching_rows.loc[best_match_idx]['rekomendasi']
+            berat_min_kg = matching_rows.loc[best_match_idx]['berat_min_kg']
+            berat_max_kg = matching_rows.loc[best_match_idx]['berat_max_kg']
+
             return {
-                "kategori": kategori,
+                "kategori": best_kategori,
                 "berat_input_kg": input_berat_kg,
                 "berat_min_kg": berat_min_kg,
                 "berat_max_kg": berat_max_kg,
                 "message": message,
                 "rekomendasi": rekomendasi_list
             }
+
         except Exception as e:
             error_msg = f"Error generating recommendation: {str(e)}\n{traceback.format_exc()}"
             logging.error(error_msg)
-            return {"message": error_msg}
-
+            return {"message": error_msg}    
+        
     def create_ui(self):
         """Create the UI elements"""
+        # Top section for title and model status
         top_frame = ttk.Frame(self.main_frame)
         top_frame.pack(fill=tk.X, pady=(0, 20))
         
-        ttk.Label(top_frame, text="GreenSort Waste Classification and Pricing", 
-                font=("Arial", 20, "bold")).pack(side=tk.LEFT)
+        ttk.Label(top_frame, text="GreenSort Waste Classification", 
+                  font=("Arial", 20, "bold")).pack(side=tk.LEFT)
         
-        self.model_status = ttk.Label(top_frame, text="Loading models...", 
-                                    font=("Arial", 10), foreground="orange")
+        self.model_status = ttk.Label(top_frame, text="Loading model...", 
+                                      font=("Arial", 10), foreground="orange")
         self.model_status.pack(side=tk.RIGHT, padx=10)
         
+        # Create a notebook for tabs
         notebook = ttk.Notebook(self.main_frame)
         notebook.pack(fill=tk.BOTH, expand=True)
         
+        # Classification tab
         self.classify_tab = ttk.Frame(notebook, padding=10)
         notebook.add(self.classify_tab, text="Classify Waste")
         
+        # About tab
         about_tab = ttk.Frame(notebook, padding=10)
         notebook.add(about_tab, text="About")
         
+        # Setup the classification tab
         self.setup_classify_tab()
+        
+        # Setup the about tab
         self.setup_about_tab(about_tab)
         
+        # Setup the footer
         footer = ttk.Frame(self.main_frame)
         footer.pack(fill=tk.X, pady=(20, 0))
         ttk.Label(footer, text="© 2025 GreenSort. All rights reserved.").pack(side=tk.LEFT)
         ttk.Label(footer, text="v1.0.0").pack(side=tk.RIGHT)
         
+        # Bind the resize event to trigger image redisplay
         self.root.bind("<Configure>", self.on_window_resize)
-
+        
     def on_window_resize(self, event):
         """Handle window resize events to redisplay image if needed"""
+        # Only process if it's a substantial resize
         if hasattr(self, 'last_width') and hasattr(self, 'last_height'):
             if (abs(self.last_width - self.root.winfo_width()) > 20 or 
                 abs(self.last_height - self.root.winfo_height()) > 20):
@@ -397,38 +329,48 @@ class GreenSortApp:
         else:
             self.last_width = self.root.winfo_width()
             self.last_height = self.root.winfo_height()
-
+        
     def setup_classify_tab(self):
         """Setup the classification tab UI"""
+        # Left panel for image and selection
         left_panel = ttk.Frame(self.classify_tab)
         left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
             
+        # Frame for image display
         img_frame = ttk.LabelFrame(left_panel, text="Waste Image", padding=10)
         img_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
             
+        # Canvas for displaying the image with fixed size
         self.img_canvas = tk.Canvas(img_frame, bg="white", bd=0, highlightthickness=0, width=400, height=300)
         self.img_canvas.pack(fill=tk.BOTH, expand=True)
             
+        # Make sure the canvas has some initial size
         self.img_canvas.update()
             
+        # Label to show when no image is selected
         self.no_img_label = ttk.Label(self.img_canvas, text="No image selected", 
                                     font=("Arial", 12))
         self.no_img_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
                 
+        # Control frame for buttons and quantity
         control_frame = ttk.Frame(left_panel)
         control_frame.pack(fill=tk.X, pady=(0, 10))
         
+        # Button to select image
         self.select_btn = ttk.Button(control_frame, text="Select Image", 
                                      command=self.select_image)
         self.select_btn.pack(side=tk.LEFT, padx=(0, 10))
         
-        inputs_frame = ttk.Frame(control_frame)
-        inputs_frame.pack(side=tk.RIGHT)
+        # Quantity frame
+        qty_frame = ttk.Frame(control_frame)
+        qty_frame.pack(side=tk.RIGHT)
         
-        qty_frame = ttk.Frame(inputs_frame)
-        qty_frame.pack(side=tk.LEFT, padx=(0, 10))
         ttk.Label(qty_frame, text="Quantity (kg):").pack(side=tk.LEFT, padx=(0, 5))
+        
+        # Use StringVar instead of DoubleVar for better control
         self.quantity_var = tk.StringVar(value="1.0")
+        
+        # Create the spinbox with more direct control
         self.quantity_spinbox = ttk.Spinbox(
             qty_frame, 
             from_=0.1, 
@@ -439,50 +381,54 @@ class GreenSortApp:
         )
         self.quantity_spinbox.pack(side=tk.LEFT)
         
-        dist_frame = ttk.Frame(inputs_frame)
-        dist_frame.pack(side=tk.LEFT)
-        ttk.Label(dist_frame, text="Distance (km):").pack(side=tk.LEFT, padx=(0, 5))
-        self.distance_var = tk.StringVar(value="10.0")
-        self.distance_spinbox = ttk.Spinbox(
-            dist_frame, 
-            from_=0.1, 
-            to=500.0, 
-            textvariable=self.distance_var, 
-            width=5, 
-            increment=0.1
-        )
-        self.distance_spinbox.pack(side=tk.LEFT)
-        
+        # Button to classify
         self.classify_btn = ttk.Button(left_panel, text="Classify Waste", 
                                       command=self.classify_image, state=tk.DISABLED)
         self.classify_btn.pack(fill=tk.X)
         
+        # Progress bar
         self.progress = ttk.Progressbar(left_panel, variable=self.progress_var, 
                                        mode='determinate')
         self.progress.pack(fill=tk.X, pady=(10, 0))
         
-        right_panel = ttk.LabelFrame(self.classify_tab, text="Results", padding=10)
+        # Right panel for results
+        right_panel = ttk.LabelFrame(self.classify_tab, text="Classification Results", padding=10)
         right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
-        self.predictions_frame = ttk.LabelFrame(right_panel, text="Classification", padding=10)
+        # Top predictions frame
+        self.predictions_frame = ttk.Frame(right_panel)
         self.predictions_frame.pack(fill=tk.X, pady=(0, 10))
         
         ttk.Label(self.predictions_frame, text="No results available",
                  font=("Arial", 12, "italic")).pack(pady=20)
         
+        # Price calculation frame
         self.price_frame = ttk.LabelFrame(right_panel, text="Price Calculation", padding=10)
-        self.price_frame.pack(fill=tk.X, pady=(0, 10))
+        self.price_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Recomendation
         self.recommendation_frame = ttk.LabelFrame(right_panel, text="Recycling Recommendations", padding=10)
         self.recommendation_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Initialize variables to store the selected image
         self.selected_image_path = None
         self.tk_image = None
         self.original_image = None
         self.processed_image = None
+        
+        # Class variable to store current quantity safely between threads
         self.current_quantity = 1.0
-        self.current_distance = 10.0
-
+        
+    def validate_quantity(self, value):
+        """Validate the quantity input to ensure it's a positive float"""
+        try:
+            if value:
+                val = float(value)
+                return val > 0
+            return True  # Allow empty input temporarily
+        except ValueError:
+            return False
+        
     def setup_about_tab(self, tab):
         """Setup the about tab with project information"""
         about_text = tk.Text(tab, wrap=tk.WORD, font=("Arial", 11), 
@@ -532,14 +478,14 @@ class GreenSortApp:
         
         about_text.insert(tk.END, about_content)
         about_text.config(state=tk.DISABLED)
-
+    
     def update_model_status(self, status_text, color):
         """Update the model status text and color"""
         self.model_status.config(text=status_text, foreground=color)
         if (color == "green" and self.classification_model and 
-            self.pricing_model and self.recommendation_model and self.recommendation_df is not None):
+            self.recommendation_model and self.recommendation_df is not None):
             self.classify_btn.config(state=tk.NORMAL)
-
+    
     def select_image(self):
         """Open file dialog to select an image"""
         file_path = filedialog.askopenfilename(
@@ -553,113 +499,124 @@ class GreenSortApp:
         if file_path:
             self.selected_image_path = file_path
             try:
+                # Validate image before attempting to display
                 test_image = Image.open(file_path)
-                test_image.verify()
+                test_image.verify()  # Verify it's a valid image
                 self.display_image(file_path)
-                if self.classification_model:
+                if self.model:
                     self.classify_btn.config(state=tk.NORMAL)
             except Exception as e:
-                error_msg = f"The selected file is not a valid image: {str(e)}"
-                logging.error(error_msg)
-                messagebox.showerror("Invalid Image", error_msg)
+                messagebox.showerror("Invalid Image", f"The selected file is not a valid image: {str(e)}")
                 self.selected_image_path = None
-
+    
     def display_image(self, img_path):
         """Display the selected image on the canvas"""
         try:
+            # Force update before getting dimensions
             self.root.update_idletasks()
-            self.original_image = Image.open(img_path)
+            
+            # Load the original image and keep a reference
+            try:
+                self.original_image = Image.open(img_path)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to open image file: {str(e)}")
+                return
+            
+            # Get canvas dimensions
             canvas_width = self.img_canvas.winfo_width()
             canvas_height = self.img_canvas.winfo_height()
             
+            # Ensure minimum canvas dimensions
             if canvas_width < 100:
                 canvas_width = 400
             if canvas_height < 100:
                 canvas_height = 300
             
+            # Calculate the new size to fit in canvas while preserving aspect ratio
             img_width, img_height = self.original_image.size
             ratio = min(canvas_width/img_width, canvas_height/img_height)
             new_width = int(img_width * ratio)
             new_height = int(img_height * ratio)
             
+            # Resize the image using LANCZOS resampling
             try:
                 resized_img = self.original_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
             except AttributeError:
+                # For older PIL versions
                 resized_img = self.original_image.resize((new_width, new_height), Image.LANCZOS)
             
-            self.tk_image = ImageTk.PhotoImage(resized_img)
+            # Convert to PhotoImage for display
+            try:
+                self.tk_image = ImageTk.PhotoImage(resized_img)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to convert image: {str(e)}")
+                return
+            
+            # Clear canvas and display image
             self.img_canvas.delete("all")
+            # Center the image
             x_pos = canvas_width // 2
             y_pos = canvas_height // 2
             self.img_canvas.create_image(x_pos, y_pos, image=self.tk_image, anchor=tk.CENTER, tags="image")
             
+            # Hide the "No image selected" label
             self.no_img_label.place_forget()
             
-            logging.info(f"Image displayed: {img_path}, canvas: {canvas_width}x{canvas_height}, display: {new_width}x{new_height}")
+            # Print debug info
+            print(f"Image displayed: {img_path}")
+            print(f"Canvas size: {canvas_width}x{canvas_height}")
+            print(f"Original size: {img_width}x{img_height}")
+            print(f"Display size: {new_width}x{new_height}")
+            
         except Exception as e:
-            error_msg = f"Could not display image: {str(e)}"
-            logging.error(error_msg)
+            error_msg = f"Could not display image: {str(e)}\n{traceback.format_exc()}"
+            print(error_msg)  # Log to console
             messagebox.showerror("Error", error_msg)
-
-    def predict_price(self, jenis_sampah, berat, jarak, harga_pasar):
-        """Predict total price using the pricing model"""
-        if not self.pricing_model or not self.encoder or not self.scaler:
-            raise ValueError("Pricing model or preprocessing components not loaded")
-        
-        if jenis_sampah not in CATEGORIES:
-            raise ValueError(f"Invalid waste type. Choose from: {CATEGORIES}")
-        
-        new_data = pd.DataFrame({
-            'Jenis_Sampah': [jenis_sampah],
-            'Berat': [berat],
-            'Jarak_Pengiriman': [jarak],
-            'Harga_Pasar': [harga_pasar]
-        })
-        
-        encoded_sampah = self.encoder.transform(new_data[['Jenis_Sampah']])
-        numeric_data = self.scaler.transform(new_data[['Berat', 'Jarak_Pengiriman', 'Harga_Pasar']])
-        features = np.hstack([encoded_sampah, numeric_data])
-        
-        prediksi_harga = self.pricing_model.predict(features, verbose=0)
-        logging.info(f"Price predicted for {jenis_sampah}: Rp {prediksi_harga[0][0]:,.0f}")
-        return max(prediksi_harga[0][0], 0)
-
+    
     def classify_image(self):
         """Classify the selected waste image"""
-        if not self.selected_image_path or not self.classification_model:
-            messagebox.showwarning("Warning", "Please select an image and ensure classification model is loaded")
+        if not self.selected_image_path or not self.model:
+            messagebox.showwarning("Warning", "Please select an image and ensure model is loaded")
             return
         
+        # Disable classify button and show progress
         self.classify_btn.config(state=tk.DISABLED)
         self.progress_var.set(10)
         
+        # Get the quantity directly from the spinbox widget
         try:
+            # Force an update to ensure we get the current value
             self.root.update_idletasks()
-            quantity = float(self.quantity_spinbox.get())
+            quantity_str = self.quantity_spinbox.get()
+            quantity = float(quantity_str)
+            print(f"Spinbox direct value: {quantity_str}, Parsed quantity: {quantity}")  # Debug
+            
+            # Only update if valid
             if quantity > 0:
                 self.current_quantity = quantity
             else:
                 self.current_quantity = 1.0
+                print("Invalid quantity (<=0), using default")
         except ValueError:
             self.current_quantity = 1.0
+            print(f"Failed to parse quantity from '{quantity_str}', using default 1.0")
         
-        try:
-            distance = float(self.distance_spinbox.get())
-            if distance > 0:
-                self.current_distance = distance
-            else:
-                self.current_distance = 10.0
-        except ValueError:
-            self.current_distance = 10.0
+        print(f"Final quantity for classification: {self.current_quantity}")  # Debug
         
-        thread = threading.Thread(target=self.process_classification, 
-                               args=(self.current_quantity, self.current_distance))
+        # Store a copy for the thread to use
+        quantity = self.current_quantity
+        
+        # Start classification in a separate thread with a copy of the quantity
+        thread = threading.Thread(target=self.process_classification, args=(quantity,))
         thread.daemon = True
         thread.start()
-
-    def process_classification(self, quantity, distance):
+    
+    def process_classification(self, quantity):
         """Process the image classification, price prediction, and recommendations"""
         try:
+            print(f"Process classification started with quantity: {quantity}")  # Debug
+            
+            # Preprocess the image
             self.root.after(0, lambda: self.progress_var.set(20))
             
             img = image.load_img(self.selected_image_path, target_size=(224, 224))
@@ -670,45 +627,49 @@ class GreenSortApp:
             
             self.root.after(0, lambda: self.progress_var.set(40))
             
-            prediction = self.classification_model.predict(img_array, verbose=0)
+            # Make prediction
+            prediction = self.model.predict(img_array)
             
             self.root.after(0, lambda: self.progress_var.set(70))
             
+            # Get predicted class and confidence
             predicted_class_index = np.argmax(prediction[0])
             predicted_class = CATEGORIES[predicted_class_index]
             confidence = prediction[0][predicted_class_index] * 100
             
+            # Get top 3 predictions
             top_indices = prediction[0].argsort()[-3:][::-1]
             top_predictions = [(CATEGORIES[i], prediction[0][i] * 100) for i in top_indices]
             
-            price_per_unit = PRICE_PER_KG.get(predicted_class, 0)
-            total_price = 0
-            if self.pricing_model:
-                try:
-                    total_price = self.predict_price(predicted_class, quantity, distance, price_per_unit)
-                except Exception as e:
-                    error_msg = f"Price prediction failed: {str(e)}"
-                    logging.error(error_msg)
-                    total_price = price_per_unit * quantity
+            self.root.after(0, lambda: self.progress_var.set(90))
+            
+            # Pass quantity to display_results using lambda to ensure it's captured correctly
+            final_quantity = quantity  # Make a copy to be sure
+            print(f"Quantity before display_results: {final_quantity}")  # Debug
+            
+            # Use lambda to capture the current value of final_quantity
+            self.root.after(0, lambda q=final_quantity: self.display_results(
+                predicted_class, confidence, top_predictions, q))
             
             recommendations = self.get_recommendation(predicted_class, quantity)
             
             self.root.after(0, lambda: self.progress_var.set(90))
             
             self.root.after(0, lambda: self.display_results(
-                predicted_class, confidence, top_predictions, quantity, distance, 
-                price_per_unit, total_price, recommendations))
+                predicted_class, confidence, top_predictions, quantity, recommendations))
             
         except Exception as e:
             error_msg = f"Classification failed: {str(e)}\n{traceback.format_exc()}"
-            logging.error(error_msg)
-            self.root.after(0, lambda msg=error_msg: self.update_model_status(msg, "red"))
+            print(error_msg)  # Log to console for debugging
+            self.root.after(0, lambda: messagebox.showerror("Error", error_msg))
             self.root.after(0, lambda: self.classify_btn.config(state=tk.NORMAL))
         finally:
             self.root.after(0, lambda: self.progress_var.set(0))
-
-    def display_results(self, predicted_class, confidence, top_predictions, quantity, distance, price_per_unit, total_price, recommendations):
+    
+    def display_results(self, predicted_class, confidence, top_predictions, quantity, recommendations):
         """Display the classification, pricing, and recommendation results"""
+        print(f"Displaying results with quantity: {quantity}")  # Debug
+        
         self.classify_btn.config(state=tk.NORMAL)
         
         for widget in self.predictions_frame.winfo_children():
@@ -716,7 +677,7 @@ class GreenSortApp:
         
         for widget in self.price_frame.winfo_children():
             widget.destroy()
-        
+            
         for widget in self.recommendation_frame.winfo_children():
             widget.destroy()
         
@@ -771,6 +732,9 @@ class GreenSortApp:
             ttk.Label(alt_item, text=f"{class_name}", font=("Arial", 11)).pack(side=tk.LEFT)
             ttk.Label(alt_item, text=f"{prob:.2f}%", font=("Arial", 10)).pack(side=tk.RIGHT)
         
+        price_per_unit = PRICE_PER_KG.get(predicted_class, 0)
+        total_price = price_per_unit * quantity
+        
         price_table = ttk.Frame(self.price_frame)
         price_table.pack(fill=tk.X, pady=10)
         
@@ -789,17 +753,12 @@ class GreenSortApp:
         ttk.Label(row3, text="Quantity:", font=("Arial", 11)).pack(side=tk.LEFT)
         ttk.Label(row3, text=f"{quantity:.2f} kg", font=("Arial", 11)).pack(side=tk.RIGHT)
         
-        row4 = ttk.Frame(price_table)
-        row4.pack(fill=tk.X, pady=2)
-        ttk.Label(row4, text="Delivery Distance:", font=("Arial", 11)).pack(side=tk.LEFT)
-        ttk.Label(row4, text=f"{distance:.2f} km", font=("Arial", 11)).pack(side=tk.RIGHT)
-        
         ttk.Separator(self.price_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=5)
         
-        row5 = ttk.Frame(price_table)
-        row5.pack(fill=tk.X, pady=5)
-        ttk.Label(row5, text="TOTAL VALUE:", font=("Arial", 12, "bold")).pack(side=tk.LEFT)
-        ttk.Label(row5, text=f"Rp {total_price:,.0f}", 
+        row4 = ttk.Frame(price_table)
+        row4.pack(fill=tk.X, pady=5)
+        ttk.Label(row4, text="TOTAL VALUE:", font=("Arial", 12, "bold")).pack(side=tk.LEFT)
+        ttk.Label(row4, text=f"Rp {total_price:,.0f}", 
                  font=("Arial", 14, "bold"), foreground="#27ae60").pack(side=tk.RIGHT)
         
         rec_frame = ttk.Frame(self.recommendation_frame)
@@ -822,7 +781,7 @@ class GreenSortApp:
         
         if self.processed_image is not None:
             self.root.after(0, self.show_processed_image)
-
+    
     def show_processed_image(self):
         """Show the processed image used for classification"""
         processed_window = tk.Toplevel(self.root)
@@ -847,10 +806,13 @@ class GreenSortApp:
 def main():
     """Main function to run the application"""
     try:
+        # Configure Tkinter styles
         style = ttk.Style()
+        
         if "clam" in style.theme_names():
             style.theme_use("clam")
             
+        # Create custom styles for widgets
         style.configure("TFrame", background="#f0f0f0")
         style.configure("Card.TFrame", background="#ffffff", relief="ridge", borderwidth=1)
         style.configure("TButton", font=("Arial", 11))
@@ -858,8 +820,9 @@ def main():
         style.configure("TLabelframe", background="#f0f0f0", font=("Arial", 11))
         style.configure("TLabelframe.Label", background="#f0f0f0", font=("Arial", 11, "bold"))
     except Exception as e:
-        logging.error(f"Warning: Could not set all theme settings: {str(e)}")
+        print(f"Warning: Could not set all theme settings: {str(e)}")
     
+    # Create and run the application
     root = tk.Tk()
     app = GreenSortApp(root)
     root.mainloop()

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.6.0] - 2025-05-01 
+> Created by **Muhammad Rofi'ul Arham**
+
+### 🎉 Added
+-  _N/A_
+
+### 🛠️ Changed
+-  Add the dataset `dataset_rekomendasi_daur_ulang.json`
+
+### 🐛 Fixed
+- Fixed the integration of `testing.py` with the recommendation system (Issue resolved).
+- Fixed the case index retrieval in `CapstoneDBS_SystemRecommendation.ipynb`.
+
+### 🗑️ Removed
+- _N/A_
+
+---
+
 ## [5.5.0] - 2025-04-28 
 > Created by **Bayu Ardiyansyah**
 

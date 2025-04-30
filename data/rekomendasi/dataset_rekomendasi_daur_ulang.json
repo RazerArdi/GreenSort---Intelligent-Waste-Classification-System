@@ -1,0 +1,392 @@
+[
+    {
+        "kategori": "Kardus",
+        "berat_min_kg": 0.1,
+        "berat_max_kg": 1.0,
+        "rekomendasi": [
+            "Lipat kardus kecil seperti kotak sepatu untuk menghemat ruang.",
+            "Gunakan kardus untuk kerajinan tangan atau proyek sekolah.",
+            "Daur ulang di bank sampah atau tempat pengumpulan kertas."
+        ]
+    },
+    {
+        "kategori": "Kardus",
+        "berat_min_kg": 1.0,
+        "berat_max_kg": 10.0,
+        "rekomendasi": [
+            "Potong kardus besar menjadi bagian kecil untuk memudahkan daur ulang.",
+            "Gunakan kardus untuk pengemasan barang saat pindahan.",
+            "Hubungi jasa pengangkut sampah untuk kardus dalam jumlah besar."
+        ]
+    },
+    {
+        "kategori": "Kardus",
+        "berat_min_kg": 10.0,
+        "berat_max_kg": 30.0,
+        "rekomendasi": [
+            "Jual ke pengepul kardus untuk daur ulang skala industri.",
+            "Gunakan untuk membuat furnitur kardus yang ramah lingkungan.",
+            "Bawa ke pusat daur ulang yang menerima kardus dalam jumlah besar."
+        ]
+    },
+    {
+        "kategori": "Kardus",
+        "berat_min_kg": 30.0,
+        "berat_max_kg": 100.0,
+        "rekomendasi": [
+            "Hubungi pabrik daur ulang kertas untuk pengambilan langsung.",
+            "Buat perjanjian dengan pengepul kardus skala besar untuk pengambilan berkala.",
+            "Pisahkan kardus berdasarkan kualitas untuk memaksimalkan nilai daur ulang."
+        ]
+    },
+    {
+        "kategori": "Bahan Organik Makanan",
+        "berat_min_kg": 0.05,
+        "berat_max_kg": 1.0,
+        "rekomendasi": [
+            "Kompos sisa makanan harian seperti kulit sayur di wadah kecil.",
+            "Campur dengan daun kering untuk mempercepat penguraian.",
+            "Buang ke tempat sampah organik jika tidak bisa dikompos."
+        ]
+    },
+    {
+        "kategori": "Bahan Organik Makanan",
+        "berat_min_kg": 1.0,
+        "berat_max_kg": 10.0,
+        "rekomendasi": [
+            "Gunakan komposter besar untuk mengelola sisa makanan dalam jumlah banyak.",
+            "Buat pupuk cair dari sisa makanan untuk tanaman.",
+            "Hubungi fasilitas pengolahan organik untuk sampah makanan berlebih."
+        ]
+    },
+    {
+        "kategori": "Bahan Organik Makanan",
+        "berat_min_kg": 10.0,
+        "berat_max_kg": 20.0,
+        "rekomendasi": [
+            "Proses sisa makanan dalam jumlah besar untuk biogas jika memungkinkan.",
+            "Buang ke fasilitas pengolahan organik skala besar.",
+            "Pastikan sisa makanan tidak tercampur dengan bahan non-organik."
+        ]
+    },
+    {
+        "kategori": "Bahan Organik Makanan",
+        "berat_min_kg": 20.0,
+        "berat_max_kg": 50.0,
+        "rekomendasi": [
+            "Distribusikan ke beberapa pusat pengolahan kompos komunitas.",
+            "Hubungi peternakan lokal yang menggunakan sisa makanan untuk pakan ternak.",
+            "Bangun sistem biodigester skala komunitas untuk menghasilkan energi biogas."
+        ]
+    },
+    {
+        "kategori": "Bahan Organik Makanan",
+        "berat_min_kg": 50.0,
+        "berat_max_kg": 200.0,
+        "rekomendasi": [
+            "Hubungi perusahaan pengolahan limbah organik skala industri.",
+            "Buat kerjasama dengan fasilitas pengolahan biogas komersial.",
+            "Pisahkan berdasarkan jenis (buah-buahan, sayuran, dll) untuk pengolahan optimal."
+        ]
+    },
+    {
+        "kategori": "Kaca",
+        "berat_min_kg": 0.2,
+        "berat_max_kg": 2.0,
+        "rekomendasi": [
+            "Cuci botol kaca kecil sebelum didaur ulang.",
+            "Gunakan kembali botol untuk menyimpan air atau dekorasi.",
+            "Buang ke tempat pengumpulan kaca di bank sampah."
+        ]
+    },
+    {
+        "kategori": "Kaca",
+        "berat_min_kg": 2.0,
+        "berat_max_kg": 15.0,
+        "rekomendasi": [
+            "Kumpulkan botol kaca dalam jumlah besar untuk didaur ulang.",
+            "Pisahkan kaca berdasarkan warna jika diperlukan oleh fasilitas.",
+            "Hubungi jasa pengangkut untuk kaca berat seperti toples besar."
+        ]
+    },
+    {
+        "kategori": "Kaca",
+        "berat_min_kg": 15.0,
+        "berat_max_kg": 50.0,
+        "rekomendasi": [
+            "Hubungi industri daur ulang kaca untuk pengambilan langsung.",
+            "Pisahkan berdasarkan jenis kaca (kaca jendela, botol, gelas) untuk daur ulang.",
+            "Gunakan sarung tangan pelindung saat menangani kaca dalam jumlah besar."
+        ]
+    },
+    {
+        "kategori": "Kaca",
+        "berat_min_kg": 50.0,
+        "berat_max_kg": 200.0,
+        "rekomendasi": [
+            "Sewa kontainer khusus untuk pembuangan kaca skala besar.",
+            "Hubungi perusahaan konstruksi yang menggunakan kaca daur ulang.",
+            "Kerjasama dengan pabrik daur ulang kaca untuk pengolahan berkelanjutan."
+        ]
+    },
+    {
+        "kategori": "Logam",
+        "berat_min_kg": 0.05,
+        "berat_max_kg": 1.0,
+        "rekomendasi": [
+            "Bersihkan kaleng minuman aluminium sebelum didaur ulang.",
+            "Kumpulkan kaleng dalam wadah kecil untuk bank sampah.",
+            "Gunakan kembali kaleng untuk kerajinan atau wadah kecil."
+        ]
+    },
+    {
+        "kategori": "Logam",
+        "berat_min_kg": 1.0,
+        "berat_max_kg": 25.0,
+        "rekomendasi": [
+            "Kumpulkan logam berat seperti besi atau aluminium untuk dijual ke pengepul.",
+            "Hubungi fasilitas pengolahan logam untuk sampah logam besar.",
+            "Pastikan logam bebas dari sisa makanan atau bahan kimia."
+        ]
+    },
+    {
+        "kategori": "Logam",
+        "berat_min_kg": 25.0,
+        "berat_max_kg": 100.0,
+        "rekomendasi": [
+            "Pisahkan logam berdasarkan jenisnya (besi, aluminium, tembaga) untuk nilai jual lebih tinggi.",
+            "Hubungi perusahaan daur ulang logam untuk pengambilan di lokasi.",
+            "Gunakan peralatan yang tepat seperti magnet untuk memisahkan logam ferrous."
+        ]
+    },
+    {
+        "kategori": "Logam",
+        "berat_min_kg": 100.0,
+        "berat_max_kg": 500.0,
+        "rekomendasi": [
+            "Hubungi pusat pengolahan skrap logam skala industri.",
+            "Negosiasikan harga jual lebih tinggi untuk logam bernilai tinggi seperti tembaga dan aluminium.",
+            "Gunakan transportasi khusus untuk pengangkutan logam berat."
+        ]
+    },
+    {
+        "kategori": "Sampah Lainnya",
+        "berat_min_kg": 0.01,
+        "berat_max_kg": 1.0,
+        "rekomendasi": [
+            "Buang baterai kecil atau komponen elektronik ke tempat khusus.",
+            "Donasikan barang kecil seperti mainan yang masih layak pakai.",
+            "Identifikasi sampah sebelum membuang ke tempat sampah biasa."
+        ]
+    },
+    {
+        "kategori": "Sampah Lainnya",
+        "berat_min_kg": 1.0,
+        "berat_max_kg": 50.0,
+        "rekomendasi": [
+            "Hubungi fasilitas daur ulang untuk limbah elektronik besar seperti TV.",
+            "Donasikan furnitur atau peralatan rumah tangga yang masih berfungsi.",
+            "Buang sampah berbahaya seperti bahan kimia ke tempat pengolahan khusus."
+        ]
+    },
+    {
+        "kategori": "Sampah Lainnya",
+        "berat_min_kg": 50.0,
+        "berat_max_kg": 200.0,
+        "rekomendasi": [
+            "Hubungi pusat pengolahan limbah berbahaya untuk pembuangan aman.",
+            "Pisahkan limbah berdasarkan kategori bahaya (beracun, korosif, mudah terbakar).",
+            "Kerjasama dengan perusahaan manajemen limbah untuk pembuangan skala besar."
+        ]
+    },
+    {
+        "kategori": "Sampah Lainnya",
+        "berat_min_kg": 200.0,
+        "berat_max_kg": 1000.0,
+        "rekomendasi": [
+            "Gunakan jasa pengangkutan limbah khusus yang bersertifikat.",
+            "Konsultasi dengan ahli lingkungan untuk identifikasi limbah berbahaya.",
+            "Buat rencana pembuangan jangka panjang untuk limbah berkelanjutan."
+        ]
+    },
+    {
+        "kategori": "Kertas",
+        "berat_min_kg": 0.02,
+        "berat_max_kg": 1.0,
+        "rekomendasi": [
+            "Gunakan kembali kertas bekas untuk catatan atau kemasan kecil.",
+            "Daur ulang kertas bersih seperti majalah di bank sampah.",
+            "Pisahkan kertas dari plastik atau perekat sebelum didaur ulang."
+        ]
+    },
+    {
+        "kategori": "Kertas",
+        "berat_min_kg": 1.0,
+        "berat_max_kg": 10.0,
+        "rekomendasi": [
+            "Kumpulkan dokumen atau kertas kantor untuk didaur ulang dalam jumlah besar.",
+            "Hubungi jasa pengangkut untuk tumpukan kertas berat.",
+            "Pastikan kertas tidak terkontaminasi minyak atau makanan."
+        ]
+    },
+    {
+        "kategori": "Kertas",
+        "berat_min_kg": 10.0,
+        "berat_max_kg": 50.0,
+        "rekomendasi": [
+            "Pisahkan kertas berdasarkan jenis (koran, kertas HVS, karton) untuk nilai daur ulang optimal.",
+            "Hubungi perusahaan daur ulang kertas untuk pengambilan di lokasi.",
+            "Gunakan mesin penghancur untuk dokumen rahasia sebelum didaur ulang."
+        ]
+    },
+    {
+        "kategori": "Kertas",
+        "berat_min_kg": 50.0,
+        "berat_max_kg": 200.0,
+        "rekomendasi": [
+            "Kerjasama dengan industri pulp dan kertas untuk daur ulang skala besar.",
+            "Gunakan alat pres untuk memadatkan kertas dan menghemat ruang penyimpanan.",
+            "Pisahkan kertas berkualitas tinggi untuk mendapatkan nilai ekonomi lebih baik."
+        ]
+    },
+    {
+        "kategori": "Plastik",
+        "berat_min_kg": 0.01,
+        "berat_max_kg": 0.5,
+        "rekomendasi": [
+            "Cuci kantong plastik atau botol kecil sebelum didaur ulang.",
+            "Gunakan kembali kantong plastik untuk keperluan rumah tangga.",
+            "Buang plastik ringan ke tempat pengumpulan plastik di bank sampah."
+        ]
+    },
+    {
+        "kategori": "Plastik",
+        "berat_min_kg": 0.5,
+        "berat_max_kg": 5.0,
+        "rekomendasi": [
+            "Kumpulkan botol plastik atau galon untuk didaur ulang di fasilitas khusus.",
+            "Pisahkan plastik keras (seperti HDPE) dari plastik lunak jika memungkinkan.",
+            "Hubungi bank sampah untuk plastik dalam jumlah besar."
+        ]
+    },
+    {
+        "kategori": "Plastik",
+        "berat_min_kg": 5.0,
+        "berat_max_kg": 20.0,
+        "rekomendasi": [
+            "Pisahkan plastik berdasarkan kode daur ulang (1-7) untuk pengolahan optimal.",
+            "Hubungi pengepul plastik untuk pengambilan di lokasi.",
+            "Gunakan mesin pencacah plastik sederhana untuk mengurangi volume."
+        ]
+    },
+    {
+        "kategori": "Plastik",
+        "berat_min_kg": 20.0,
+        "berat_max_kg": 100.0,
+        "rekomendasi": [
+            "Hubungi industri daur ulang plastik untuk pengambilan langsung.",
+            "Gunakan mesin pres untuk memadatkan plastik lunak atau botol plastik.",
+            "Kerjasama dengan perusahaan yang membuat produk dari plastik daur ulang."
+        ]
+    },
+    {
+        "kategori": "Plastik",
+        "berat_min_kg": 100.0,
+        "berat_max_kg": 500.0,
+        "rekomendasi": [
+            "Sewa kontainer khusus untuk penyimpanan plastik skala industri.",
+            "Kerjasama dengan industri pengolahan sampah plastik menjadi bahan bakar alternatif.",
+            "Investasi dalam teknologi pengolahan plastik menjadi produk bernilai tambah."
+        ]
+    },
+    {
+        "kategori": "Sampah Tekstil",
+        "berat_min_kg": 0.1,
+        "berat_max_kg": 2.0,
+        "rekomendasi": [
+            "Donasikan pakaian bekas yang masih layak pakai ke badan amal.",
+            "Gunakan kain bekas untuk kain lap atau kerajinan tangan.",
+            "Buang tekstil kecil ke tempat pengumpulan tekstil jika tersedia."
+        ]
+    },
+    {
+        "kategori": "Sampah Tekstil",
+        "berat_min_kg": 2.0,
+        "berat_max_kg": 20.0,
+        "rekomendasi": [
+            "Kumpulkan tekstil besar seperti karpet untuk didaur ulang di fasilitas khusus.",
+            "Potong kain besar menjadi bagian kecil untuk isian bantal atau boneka.",
+            "Hubungi jasa pengangkut untuk tekstil dalam jumlah besar."
+        ]
+    },
+    {
+        "kategori": "Sampah Tekstil",
+        "berat_min_kg": 20.0,
+        "berat_max_kg": 50.0,
+        "rekomendasi": [
+            "Hubungi industri pengolahan tekstil bekas untuk daur ulang.",
+            "Pisahkan berdasarkan jenis bahan (katun, wol, sintetis) untuk pengolahan optimal.",
+            "Kerjasama dengan perusahaan fashion yang memiliki program daur ulang tekstil."
+        ]
+    },
+    {
+        "kategori": "Sampah Tekstil",
+        "berat_min_kg": 50.0,
+        "berat_max_kg": 200.0,
+        "rekomendasi": [
+            "Hubungi pabrik yang menggunakan tekstil daur ulang untuk isolasi atau produk lain.",
+            "Kerjasama dengan industri otomotif yang menggunakan tekstil daur ulang untuk interior.",
+            "Cari perusahaan yang mengolah tekstil menjadi bahan bakar alternatif."
+        ]
+    },
+    {
+        "kategori": "Vegetasi",
+        "berat_min_kg": 0.05,
+        "berat_max_kg": 2.0,
+        "rekomendasi": [
+            "Kompos daun atau ranting kecil di rumah untuk pupuk alami.",
+            "Gunakan daun kering sebagai mulsa untuk tanaman.",
+            "Buang vegetasi kecil ke tempat sampah organik."
+        ]
+    },
+    {
+        "kategori": "Vegetasi",
+        "berat_min_kg": 2.0,
+        "berat_max_kg": 20.0,
+        "rekomendasi": [
+            "Potong ranting besar menjadi ukuran kecil untuk kompos atau mulsa.",
+            "Buang vegetasi dalam jumlah besar ke fasilitas pengolahan organik.",
+            "Gunakan sisa tanaman untuk membuat kerajinan alami seperti anyaman."
+        ]
+    },
+    {
+        "kategori": "Vegetasi",
+        "berat_min_kg": 20.0,
+        "berat_max_kg": 50.0,
+        "rekomendasi": [
+            "Hubungi jasa pengangkut untuk vegetasi besar seperti cabang pohon.",
+            "Proses vegetasi untuk pembuatan kompos skala besar atau biogas.",
+            "Pastikan vegetasi tidak tercampur dengan sampah non-organik."
+        ]
+    },
+    {
+        "kategori": "Vegetasi",
+        "berat_min_kg": 50.0,
+        "berat_max_kg": 200.0,
+        "rekomendasi": [
+            "Gunakan mesin pencacah (chipper) untuk mengolah ranting dan cabang besar.",
+            "Kerjasama dengan taman kota atau kebun komunitas untuk penggunaan mulsa.",
+            "Hubungi perusahaan landskaping yang menggunakan mulsa organik."
+        ]
+    },
+    {
+        "kategori": "Vegetasi",
+        "berat_min_kg": 200.0,
+        "berat_max_kg": 1000.0,
+        "rekomendasi": [
+            "Hubungi fasilitas pengolahan biomassa untuk mengubah menjadi energi.",
+            "Kerjasama dengan industri yang menggunakan bahan baku vegetasi seperti pembuat kertas.",
+            "Investasi dalam teknologi pengolahan skala besar seperti biodigester industrial."
+        ]
+    }
+]
