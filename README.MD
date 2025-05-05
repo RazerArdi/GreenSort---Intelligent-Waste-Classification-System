@@ -15,7 +15,7 @@ The model is trained using the [RealWaste dataset](https://archive.ics.uci.edu/d
 ## 🚀 Key Features
 
 - **Automated Waste Classification**: Classifies waste types from images with >90% accuracy using MobileNetV2.
-- **Price Estimation**: Predicts the value of recyclable materials based on type, weight, and market price using a neural network.
+- **Recommendation System**: Suggests waste handling actions based on type and weight using supervised learning.
 - **Shipping Cost Calculation**: Estimates shipping costs based on distance.
 - **Interactive GUI**: `testing.py` provides a user-friendly desktop interface for testing.
 - **Web Deployment**: TensorFlow.js models enable browser-based classification and pricing predictions.
@@ -28,17 +28,18 @@ The model is trained using the [RealWaste dataset](https://archive.ics.uci.edu/d
 GreenSort/
 ├── data/
 │   └── realwaste-main/
-│       └── realwaste/                      # RealWaste dataset (download separately)
+│       ├── realwaste/                      # RealWaste dataset (download separately)
+│       └── rekomendasi/                    # Recommendation dataset  
 ├── models/
 │   ├── ComputerVision/
 │   │   ├── greensort_model.h5              # Trained Keras classification model
 │   │   └── tfjs_model/                     # TensorFlow.js models for browser deployment
-│   ├── PriceEst/
-│       ├── greensort_price_model_tf.h5     # Trained Keras pricing model
-│       └── reprocessing_metadata.json      # Metadata for pricing model preprocessing
+│   ├── Sistemrekomendasi/
+│       ├── models/                         # Trained Keras recommendation model
+│       └── dataset.json                    # Dataset for recommendation
 ├── notebooks/
 │   ├── CapstoneDBS_ComputerVision.ipynb    # Notebook for classification model training
-│   └── CapstoneDBS_PricingModel.ipynb      # Notebook for pricing model training
+│   └── CapstoneDBS_SistemRekomendasi.ipynb # Notebook for recommendation model training
 ├── src/
 │   └── utils.py                            # Helper functions for preprocessing and evaluation
 ├── web/
@@ -104,8 +105,8 @@ GreenSort/
 4. **Download the RealWaste dataset** and place it in `data/realwaste/`.
 
 5. **Prepare the trained models**:
-   - Place `greensort_model.h5` and `greensort_price_model_tf.h5` in `models/`.
-   - Or train the models using `notebooks/CapstoneDBS_ComputerVision.ipynb` and `notebooks/CapstoneDBS_PricingModel.ipynb`.
+   - Place `greensort_model.h5` and `recycling_recommendation_model.h5` in `models/`.
+   - Or train the models using `notebooks/CapstoneDBS_ComputerVision.ipynb` and `notebooks/CapstoneDBS_SistemRekomendasi.ipynb`.
 
 ### For Web Deployment
 1. **Install Node.js** (if not already installed):
@@ -123,7 +124,7 @@ GreenSort/
    ```bash
    pip install tensorflowjs
    tensorflowjs_converter --input_format keras models/greensort_model.h5 models/tfjs_model/classification
-   tensorflowjs_converter --input_format keras models/greensort_price_model_tf.h5 models/tfjs_model/pricing
+   tensorflowjs_converter --input_format keras models/recycling_recommendation_model.h5 models/tfjs_model/recommendation
    ```
 
 4. **Set up a web server**:
@@ -138,17 +139,17 @@ GreenSort/
 ## 🔧 Usage
 
 ### 1. Training the Models
-- Open `notebooks/CapstoneDBS_ComputerVision.ipynb` for the classification model and `notebooks/CapstoneDBS_PricingModel.ipynb` for the pricing model in Jupyter Notebook or JupyterLab.
+- Open `notebooks/CapstoneDBS_ComputerVision.ipynb` for the classification model and `notebooks/CapstoneDBS_SistemRekomendasi.ipynb` for the recommendation model in Jupyter Notebook or JupyterLab.
 - Follow the steps to:
   - Preprocess the dataset
   - Train the models (MobileNetV2 for classification, neural network for pricing)
   - Evaluate metrics (accuracy, MAE, R²)
-- Save the models to `../models/ComputerVision/greensort_model.h5` and `../models/PriceEst/greensort_price_model_tf.h5`.
+- Save the models to `../models/ComputerVision/greensort_model.h5` and `../models/Sistemrekomendasi/recycling_recommendation_model.h5`.
 - Convert to TensorFlow.js:
   ```python
   import tensorflowjs as tfjs
   tfjs.converters.save_keras_model(classification_model, 'models/tfjs_model/classification')
-  tfjs.converters.save_keras_model(pricing_model, 'models/tfjs_model/pricing')
+  tfjs.converters.save_keras_model(recommendation_model, 'models/tfjs_model/recommendation')
   ```
 
 ### 2. Testing with the GUI
@@ -351,15 +352,23 @@ GreenSort/
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
   );
 
-  -- Table: price_predictions
-  CREATE TABLE price_predictions (
-    prediction_id INT PRIMARY KEY AUTO_INCREMENT,
+  -- Tabel referensi rekomendasi
+  CREATE TABLE recommendation_rules (
+    rule_id INT PRIMARY KEY AUTO_INCREMENT,
+    category_id INT NOT NULL,
+    weight_min_kg DECIMAL(10,2) NOT NULL,
+    weight_max_kg DECIMAL(10,2) NOT NULL,
+    recomamendation TEXT NOT NULL,
+    FOREIGN KEY (category_id) REFERENCES waste_categories(category_id)
+  );
+
+  -- Tabel log hasil rekomendasi
+  CREATE TABLE recommendations (
+    recommendation_id INT PRIMARY KEY AUTO_INCREMENT,
     classification_id INT NOT NULL,
-    weight_kg DECIMAL(10,2) NOT NULL,
-    delivery_distance_km DECIMAL(10,2) NOT NULL,
-    market_price DECIMAL(10,2) NOT NULL,
-    total_price DECIMAL(10,2) NOT NULL,
-    prediction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    estimated_weight DECIMAL(10,2) NOT NULL,
+    generated_recommendation TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (classification_id) REFERENCES classifications(classification_id)
   );
   ```
