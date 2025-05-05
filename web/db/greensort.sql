@@ -25,14 +25,22 @@ CREATE TABLE classifications (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
--- Table: price_predictions
-CREATE TABLE price_predictions (
-    prediction_id INT PRIMARY KEY AUTO_INCREMENT,
-    classification_id INT NOT NULL,
-    weight_kg DECIMAL(10,2) NOT NULL,
-    delivery_distance_km DECIMAL(10,2) NOT NULL,
-    market_price DECIMAL(10,2) NOT NULL,
-    total_price DECIMAL(10,2) NOT NULL,
-    prediction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (classification_id) REFERENCES classifications(classification_id)
+-- Tabel referensi rekomendasi
+CREATE TABLE recommendation_rules (
+  rule_id INT PRIMARY KEY AUTO_INCREMENT,
+  category_id INT NOT NULL,
+  weight_min_kg DECIMAL(10,2) NOT NULL,
+  weight_max_kg DECIMAL(10,2) NOT NULL,
+  recomamendation TEXT NOT NULL,
+  FOREIGN KEY (category_id) REFERENCES waste_categories(category_id)
+);
+
+-- Tabel log hasil rekomendasi
+CREATE TABLE recommendations (
+  recommendation_id INT PRIMARY KEY AUTO_INCREMENT,
+  classification_id INT NOT NULL,
+  estimated_weight DECIMAL(10,2) NOT NULL,
+  generated_recommendation TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (classification_id) REFERENCES classifications(classification_id)
 );
