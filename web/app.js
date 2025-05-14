@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Classification model loaded');
 
             console.log('Loading recommendation model...');
-            recommendationModel = await tf.loadLayersModel('../models/ComputerVision/recommendation/model.json');
+            recommendationModel = await tf.loadLayersModel('../models/Sistemrekomendasi/models/model_recommendation.json');
             console.log('Recommendation model loaded');
 
             isModelLoaded = true;
