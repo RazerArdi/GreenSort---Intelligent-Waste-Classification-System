@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [6.5.2] - 2025-05-01
+> Created by **Bayu Ardiyansyah** 
+
+### 🎉 Added
+- Initial release of the GreenSort web application.
+- Implemented web interface with `index.html`, `style.css`, and `app.js`.
+- Added tabbed navigation for "Classify Waste" and "About" sections.
+- Integrated image upload and quantity input for waste classification.
+- Added mock classification logic in `app.js` to simulate waste category predictions (9 categories).
+- Implemented pricing calculations based on predefined rates (e.g., Cardboard: Rp 2,000/kg).
+- Added mock recommendation system with static dataset for recycling suggestions.
+- Included processed image modal to display 224x224 resized image.
+- Added responsive design with CSS grid and media queries for mobile compatibility.
+- Integrated Font Awesome (v6.2.0) for icons and Chart.js (v3.9.1) for potential future charting (not used in v1.0.0).
+- Added demo mode warning to indicate simulated classifications.
+
+### 🛠️ Changed
+- Transitioned from Python/Tkinter GUI (using TensorFlow and Matplotlib) to a static web application.
+- Replaced server-side model loading (`greensort_model.h5`, `recycling_recommendation_model.h5`) with client-side mock logic in `app.js`.
+- Converted recommendation dataset from `dataset.json` to embedded JavaScript object in `app.js`.
+- Updated UI to use modern web technologies (HTML5, CSS3, JavaScript ES6) instead of Tkinter widgets.
+- Standardized category mappings (e.g., Cardboard → Kardus) for consistency with Python version.
+
+### 🐛 Fixed
+- Ensured file input works correctly when served via a local HTTP server (e.g., `http-server` or Python `http.server`).
+- Fixed potential CORS issues by relying on CDN resources (Font Awesome, Chart.js) or local files.
+- Corrected modal display logic to prevent overlapping content in the processed image view.
+
+### 🗑️ Removed
+- Removed dependency on Python, TensorFlow, Tkinter, Matplotlib, and Pandas from the Python GUI version.
+- Eliminated server-side model loading and dataset file (`dataset.json`) in favor of client-side simulation.
+- Removed Matplotlib-based processed image display in favor of HTML5 Canvas.
+
+---
 
 ## [5.5.1] - 2025-05-01 
 > Created by **Muhammad Rofi'ul Arham**
