@@ -169,11 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Load TensorFlow.js models
         try {
             console.log('Loading classification model...');
-            classificationModel = await tf.loadLayersModel('../models/ComputerVision/tfjs_model/model.json');
+            classificationModel = await tf.loadLayersModel('https://my-model-bucket-greensort.s3.eu-north-1.amazonaws.com/ComputerVision/tfjs_model/model.json');
             console.log('Classification model loaded');
 
             console.log('Loading recommendation model...');
-            recommendationModel = await tf.loadLayersModel('../models/Sistemrekomendasi/models/model_recommendation.json');
+            recommendationModel = await tf.loadLayersModel('https://my-model-bucket-greensort.s3.eu-north-1.amazonaws.com/Sistemrekomendasi/models/model_recommendation.json');
             console.log('Recommendation model loaded');
 
             isModelLoaded = true;
