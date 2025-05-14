@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'Vegetation': '#32cd32'
     };
 
-    // Mock recommendation data
+    // Fallback mock recommendation data
     const RECOMMENDATION_DATA = [
         {
             kategori: 'Kardus',
@@ -156,21 +156,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // State
     let isModelLoaded = false;
     let selectedFile = null;
+    let classificationModel = null;
+    let recommendationModel = null;
 
     // Initialize
     initializeApp();
 
-    function initializeApp() {
-        // Simulate model loading
-        setTimeout(() => {
+    async function initializeApp() {
+        console.log('Initializing app...');
+        console.log('TensorFlow.js available:', typeof tf !== 'undefined' ? tf.version.tfjs : 'Not loaded');
+
+        // Load TensorFlow.js models
+        try {
+            console.log('Loading classification model...');
+            classificationModel = await tf.loadLayersModel('../models/ComputerVision/tfjs_model/model.json');
+            console.log('Classification model loaded');
+
+            console.log('Loading recommendation model...');
+            recommendationModel = await tf.loadLayersModel('../models/ComputerVision/recommendation/model.json');
+            console.log('Recommendation model loaded');
+
             isModelLoaded = true;
-            updateModelStatus('Model loaded successfully', 'success');
-            // Add demo mode warning
+            updateModelStatus('Models loaded successfully', 'success');
+        } catch (error) {
+            console.error('Model loading failed:', error);
+            updateModelStatus('Failed to load models', 'error');
             const demoWarning = document.createElement('div');
             demoWarning.className = 'demo-warning';
-            demoWarning.innerHTML = '<strong>Demo Mode:</strong> Running with a simulated model. Classifications are for demonstration only.';
+            demoWarning.innerHTML = '<strong>Demo Mode:</strong> Running with simulated models. Classifications and recommendations are for demonstration only.';
             document.querySelector('.left-panel').prepend(demoWarning);
-        }, 2000);
+        }
 
         // Event listeners
         imageInput.addEventListener('change', handleImageSelection);
@@ -181,8 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tabButtons.forEach(btn => {
             btn.addEventListener('click', () => switchTab(btn.dataset.tab));
         });
-
-        // Enable classify button when quantity changes
         quantityInput.addEventListener('input', updateClassifyButtonState);
     }
 
@@ -230,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function classifyImage() {
         if (!selectedFile || !isModelLoaded) {
-            alert('Please select an image and ensure the model is loaded.');
+            alert('Please select an image and ensure models are loaded.');
             return;
         }
 
@@ -238,12 +251,44 @@ document.addEventListener('DOMContentLoaded', () => {
         progressBar.style.width = '10%';
 
         try {
-            // Simulate image processing
+            // Process image
             await simulateDelay(500);
             progressBar.style.width = '20%';
 
-            // Mock classification (since we don't have the actual model)
-            const { predictedClass, confidence, topPredictions } = mockClassification();
+            // Preprocess image for classification
+            const img = new Image();
+            img.src = selectedImage.src;
+            await new Promise(resolve => { img.onload = resolve; });
+            const tensor = tf.browser.fromPixels(img)
+                .resizeNearestNeighbor([224, 224])
+                .toFloat()
+                .div(tf.scalar(255.0))
+                .expandDims();
+
+            // Classification
+            let predictedClass, confidence, topPredictions;
+            if (classificationModel) {
+                progressBar.style.width = '50%';
+                const prediction = await classificationModel.predict(tensor).data();
+                const predictedClassIndex = prediction.indexOf(Math.max(...prediction));
+                predictedClass = CATEGORIES[predictedClassIndex];
+                confidence = prediction[predictedClassIndex] * 100;
+
+                // Get top 3 predictions
+                const topIndices = Array.from(prediction)
+                    .map((val, idx) => ({ val, idx }))
+                    .sort((a, b) => b.val - a.val)
+                    .slice(0, 3)
+                    .map(item => item.idx);
+                topPredictions = topIndices.map((index, i) => ({
+                    className: CATEGORIES[index],
+                    confidence: prediction[index] * 100
+                }));
+            } else {
+                // Fallback to mock classification
+                ({ predictedClass, confidence, topPredictions } = mockClassification());
+            }
+
             progressBar.style.width = '70%';
 
             const quantity = parseFloat(quantityInput.value);
@@ -253,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Get recommendations
-            const recommendations = getRecommendation(predictedClass, quantity);
+            const recommendations = await getRecommendation(predictedClass, quantity);
             progressBar.style.width = '90%';
 
             // Display results
@@ -276,12 +321,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function mockClassification() {
-        // Simulate model prediction with random data
         const randomIndex = Math.floor(Math.random() * CATEGORIES.length);
         const predictedClass = CATEGORIES[randomIndex];
-        const confidence = 75 + Math.random() * 20; // Between 75% and 95%
+        const confidence = 75 + Math.random() * 20;
         
-        // Generate top 3 predictions
         const topIndices = [randomIndex];
         while (topIndices.length < 3) {
             const newIndex = Math.floor(Math.random() * CATEGORIES.length);
@@ -291,40 +334,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const topPredictions = topIndices.map((index, i) => ({
             className: CATEGORIES[index],
-            confidence: i === 0 ? confidence : (confidence - (i * 15)) // Decrease confidence for alternatives
+            confidence: i === 0 ? confidence : (confidence - (i * 15))
         }));
 
         return { predictedClass, confidence, topPredictions };
     }
 
-    function getRecommendation(inputKategori, inputBeratKg, tolerance = 0.2) {
+    async function getRecommendation(inputKategori, inputBeratKg, tolerance = 0.2) {
         try {
             const mappedCategory = CATEGORY_MAPPING[inputKategori] || inputKategori;
-            const matchingRows = RECOMMENDATION_DATA.filter(row => row.kategori === mappedCategory);
+            if (recommendationModel) {
+                const categoryIndex = CATEGORIES.indexOf(inputKategori);
+                const inputTensor = tf.tensor2d([[categoryIndex, inputBeratKg]]);
+                
+                const prediction = await recommendationModel.predict(inputTensor).data();
+                const [berat_min_kg, berat_max_kg, ...recIndices] = prediction;
+                
+                const rekomendasi = recIndices
+                    .slice(0, 3)
+                    .map(idx => `Recommendation ${Math.round(idx)}: Follow local recycling guidelines.`);
+                
+                const result = {
+                    kategori: mappedCategory,
+                    berat_input_kg: inputBeratKg,
+                    berat_min_kg,
+                    berat_max_kg,
+                    rekomendasi
+                };
 
-            if (!matchingRows.length) {
-                return { message: `Kategori '${mappedCategory}' tidak ditemukan dalam dataset.` };
+                if (inputBeratKg < berat_min_kg || inputBeratKg > berat_max_kg) {
+                    result.message = `Berat sampah Anda (${inputBeratKg} kg) sedikit tidak sesuai dengan rekomendasi untuk kategori ini (${berat_min_kg} kg - ${berat_max_kg} kg). Namun, berikut adalah beberapa rekomendasi yang bisa diterapkan:`;
+                }
+
+                return result;
+            } else {
+                const matchingRows = RECOMMENDATION_DATA.filter(row => row.kategori === mappedCategory);
+                if (!matchingRows.length) {
+                    return { message: `Kategori '${mappedCategory}' tidak ditemukan dalam dataset.` };
+                }
+
+                const weightMatch = matchingRows.find(row =>
+                    row.berat_min_kg <= inputBeratKg && inputBeratKg <= row.berat_max_kg
+                );
+
+                const bestMatch = weightMatch || matchingRows[0];
+                let message = '';
+
+                if (!weightMatch) {
+                    message = `Berat sampah Anda (${inputBeratKg} kg) sedikit tidak sesuai dengan rekomendasi untuk kategori ini (${bestMatch.berat_min_kg} kg - ${bestMatch.berat_max_kg} kg). Namun, berikut adalah beberapa rekomendasi yang bisa diterapkan:`;
+                }
+
+                return {
+                    kategori: bestMatch.kategori,
+                    berat_input_kg: inputBeratKg,
+                    berat_min_kg: bestMatch.berat_min_kg,
+                    berat_max_kg: bestMatch.berat_max_kg,
+                    message: message,
+                    rekomendasi: bestMatch.rekomendasi
+                };
             }
-
-            const weightMatch = matchingRows.find(row =>
-                row.berat_min_kg <= inputBeratKg && inputBeratKg <= row.berat_max_kg
-            );
-
-            const bestMatch = weightMatch || matchingRows[0];
-            let message = '';
-
-            if (!weightMatch) {
-                message = `Berat sampah Anda (${inputBeratKg} kg) sedikit tidak sesuai dengan rekomendasi untuk kategori ini (${bestMatch.berat_min_kg} kg - ${bestMatch.berat_max_kg} kg). Namun, berikut adalah beberapa rekomendasi yang bisa diterapkan:`;
-            }
-
-            return {
-                kategori: bestMatch.kategori,
-                berat_input_kg: inputBeratKg,
-                berat_min_kg: bestMatch.berat_min_kg,
-                berat_max_kg: bestMatch.berat_max_kg,
-                message: message,
-                rekomendasi: bestMatch.rekomendasi
-            };
         } catch (error) {
             console.error('Recommendation error:', error);
             return { message: `Error generating recommendation: ${error.message}` };
@@ -332,12 +400,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayResults(predictedClass, confidence, topPredictions, quantity, recommendations) {
-        // Clear previous results
         predictionsFrame.innerHTML = '';
         priceFrame.classList.remove('hidden');
         recommendationFrame.classList.remove('hidden');
 
-        // Predictions
         const predictionHeader = document.createElement('div');
         predictionHeader.className = 'prediction-header';
         predictionHeader.innerHTML = '<h3>Top Prediction:</h3>';
@@ -377,7 +443,6 @@ document.addEventListener('DOMContentLoaded', () => {
             predictionsFrame.appendChild(alternativePredictions);
         }
 
-        // Price Calculation
         const priceContent = document.getElementById('priceContent');
         priceContent.innerHTML = '';
 
@@ -404,7 +469,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        // Recommendations
         const recommendationContent = document.getElementById('recommendationContent');
         recommendationContent.innerHTML = '';
 
@@ -428,7 +492,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function showProcessedImage() {
         if (!selectedImage.src) return;
 
-        // Create a canvas to simulate processed image (224x224)
         const canvas = document.createElement('canvas');
         canvas.width = 224;
         canvas.height = 224;
@@ -440,14 +503,11 @@ document.addEventListener('DOMContentLoaded', () => {
             img.onload = resolve;
         });
 
-        // Draw resized image
         ctx.drawImage(img, 0, 0, 224, 224);
 
-        // Clear previous content
         processedImageContainer.innerHTML = '';
         processedImageContainer.appendChild(canvas);
 
-        // Show modal
         processedImageModal.style.display = 'block';
     }
 });
