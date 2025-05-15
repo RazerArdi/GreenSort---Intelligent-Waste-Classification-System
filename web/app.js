@@ -48,8 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const API_KEYS = {
-        primary: 'Fovu7tGif73gqRtHd2iaYocpHkV0USfI5hVmqLNRYF2OtsPbbJGvJQQJ99BEAAAAAAAAAAAAINFRAZML1ISi',
-        secondary: '8aFikV6o8w54LHxJCHhmN0VZoVobC90S73iK9sIXnEkwdSDMhQZyJQQJ99BEAAAAAAAAAAAAINFRAZML3Wqt'
+        primary: 'end',
+        secondary: 'end'
     };
 
     // DOM Elements
