@@ -5,8 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),  
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.5.6] - 2025-05-15
+> Created by **Bayu Ardiyansyah** 
+- Revision for Web interface
+- Revision for CapstoneDBS_ComputerVision.ipynb (MLFLOW)
+- Revision for CapstoneDBS/Recommendation System.ipynb (MLFLOW)
+- Retrain Model
 ---
-## [6.5.2] - 2025-05-01
+## [6.5.2] - 2025-05-14
 > Created by **Bayu Ardiyansyah** 
 
 ### 🎉 Added

@@ -1,0 +1,9 @@
+channels:
+- conda-forge
+dependencies:
+- python=3.10.17
+- pip<=25.1
+- pip:
+  - mlflow==2.22.0
+  - keras==3.9.0
+name: mlflow-env

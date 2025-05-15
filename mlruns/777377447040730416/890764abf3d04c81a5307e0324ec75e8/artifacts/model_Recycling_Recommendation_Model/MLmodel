@@ -1,0 +1,26 @@
+artifact_path: model_Recycling_Recommendation_Model
+flavors:
+  keras:
+    data: data
+    keras_backend: tensorflow
+    keras_version: 3.9.0
+    save_exported_model: false
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.keras
+    python_version: 3.10.17
+is_signature_from_type_hint: false
+mlflow_version: 2.22.0
+model_size_bytes: 26120
+model_uuid: 34601bea4fdb4904a59510ccf1d636b5
+prompts: null
+run_id: 890764abf3d04c81a5307e0324ec75e8
+signature:
+  inputs: '[{"type": "tensor", "tensor-spec": {"dtype": "object", "shape": [-1]}}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float32", "shape": [-1,
+    292]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2025-05-14 16:42:12.770045'

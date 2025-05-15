@@ -30,100 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'Vegetation': '#32cd32'
     };
 
-    // Fallback mock recommendation data
-    const RECOMMENDATION_DATA = [
-        {
-            kategori: 'Kardus',
-            berat_min_kg: 0.5,
-            berat_max_kg: 50,
-            rekomendasi: [
-                'Recycle at a local cardboard recycling facility.',
-                'Ensure the cardboard is clean and free of tape or labels.',
-                'Flatten the cardboard to save space.'
-            ]
-        },
-        {
-            kategori: 'Bahan Organik Makanan',
-            berat_min_kg: 0.1,
-            berat_max_kg: 20,
-            rekomendasi: [
-                'Compost food scraps in a backyard compost bin.',
-                'Avoid including meat or dairy to prevent odors.',
-                'Contact local composting services for large quantities.'
-            ]
-        },
-        {
-            kategori: 'Kaca',
-            berat_min_kg: 0.5,
-            berat_max_kg: 30,
-            rekomendasi: [
-                'Clean glass containers before recycling.',
-                'Separate by color if required by local facilities.',
-                'Check for local glass recycling drop-off points.'
-            ]
-        },
-        {
-            kategori: 'Logam',
-            berat_min_kg: 0.2,
-            berat_max_kg: 40,
-            rekomendasi: [
-                'Take to a scrap metal recycling center.',
-                'Remove any non-metal attachments.',
-                'Sort by metal type (e.g., aluminum, steel) if possible.'
-            ]
-        },
-        {
-            kategori: 'Sampah Lainnya',
-            berat_min_kg: 0.1,
-            berat_max_kg: 100,
-            rekomendasi: [
-                'Dispose of non-recyclable waste responsibly.',
-                'Check local waste management guidelines.',
-                'Consider upcycling for creative reuse.'
-            ]
-        },
-        {
-            kategori: 'Kertas',
-            berat_min_kg: 0.3,
-            berat_max_kg: 50,
-            rekomendasi: [
-                'Recycle at a paper recycling facility.',
-                'Remove staples or bindings if required.',
-                'Keep paper dry and clean for best recycling results.'
-            ]
-        },
-        {
-            kategori: 'Plastik',
-            berat_min_kg: 0.2,
-            berat_max_kg: 30,
-            rekomendasi: [
-                'Clean plastic containers before recycling.',
-                'Check plastic type (e.g., PET, HDPE) for local recycling rules.',
-                'Avoid mixing different plastic types.'
-            ]
-        },
-        {
-            kategori: 'Sampah Tekstil',
-            berat_min_kg: 0.3,
-            berat_max_kg: 20,
-            rekomendasi: [
-                'Donate usable textiles to charity.',
-                'Recycle damaged textiles at specialized facilities.',
-                'Avoid disposing textiles in regular trash.'
-            ]
-        },
-        {
-            kategori: 'Vegetasi',
-            berat_min_kg: 0.5,
-            berat_max_kg: 50,
-            rekomendasi: [
-                'Compost yard waste in a compost pile.',
-                'Use for mulch if suitable.',
-                'Contact local green waste collection services.'
-            ]
-        }
-    ];
-
     const CATEGORY_MAPPING = {
         'Cardboard': 'Kardus',
         'Food_Organics': 'Bahan Organik Makanan',
@@ -134,6 +40,16 @@ document.addEventListener('DOMContentLoaded', () => {
         'Plastic': 'Plastik',
         'Textile_Trash': 'Sampah Tekstil',
         'Vegetation': 'Vegetasi'
+    };
+
+    const API_ENDPOINTS = {
+        classification: 'https://greensort-jhfbo.eastus2.inference.ml.azure.com/score',
+        recommendation: 'upcoming'
+    };
+
+    const API_KEYS = {
+        primary: 'Fovu7tGif73gqRtHd2iaYocpHkV0USfI5hVmqLNRYF2OtsPbbJGvJQQJ99BEAAAAAAAAAAAAINFRAZML1ISi',
+        secondary: '8aFikV6o8w54LHxJCHhmN0VZoVobC90S73iK9sIXnEkwdSDMhQZyJQQJ99BEAAAAAAAAAAAAINFRAZML3Wqt'
     };
 
     // DOM Elements
@@ -154,36 +70,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabContents = document.querySelectorAll('.tab-content');
 
     // State
-    let isModelLoaded = false;
+    let isApiReady = false;
     let selectedFile = null;
-    let classificationModel = null;
-    let recommendationModel = null;
 
     // Initialize
     initializeApp();
 
     async function initializeApp() {
         console.log('Initializing app...');
-        console.log('TensorFlow.js available:', typeof tf !== 'undefined' ? tf.version.tfjs : 'Not loaded');
 
-        // Load TensorFlow.js models
+        // Check classification API availability
         try {
-            console.log('Loading classification model...');
-            classificationModel = await tf.loadLayersModel('../models/ComputerVision/tfjs_model/model.json');
-            console.log('Classification model loaded');
-
-            console.log('Loading recommendation model...');
-            recommendationModel = await tf.loadLayersModel('../models/ComputerVision/recommendation/model.json');
-            console.log('Recommendation model loaded');
-
-            isModelLoaded = true;
-            updateModelStatus('Models loaded successfully', 'success');
+            await checkApiStatus(API_ENDPOINTS.classification);
+            isApiReady = true;
+            updateModelStatus('Classification API ready. Recommendation system upcoming.', 'success');
         } catch (error) {
-            console.error('Model loading failed:', error);
-            updateModelStatus('Failed to load models', 'error');
+            console.error('API initialization failed:', error);
+            let errorMessage = 'Failed to connect to classification API.';
+            if (error.message.includes('403')) {
+                errorMessage += ' Authentication failed with both keys. Verify API keys.';
+            } else if (error.message.includes('CORS') || error.message.includes('NetworkError')) {
+                errorMessage += ' CORS issue detected. The server must allow requests from http://127.0.0.1:5500. Consider using a proxy for development.';
+            }
+            updateModelStatus(errorMessage, 'error');
             const demoWarning = document.createElement('div');
             demoWarning.className = 'demo-warning';
-            demoWarning.innerHTML = '<strong>Demo Mode:</strong> Running with simulated models. Classifications and recommendations are for demonstration only.';
+            demoWarning.innerHTML = `<strong>Demo Mode:</strong> API unavailable. ${errorMessage} Contact API administrator or set up a proxy server.`;
             document.querySelector('.left-panel').prepend(demoWarning);
         }
 
@@ -197,6 +109,47 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', () => switchTab(btn.dataset.tab));
         });
         quantityInput.addEventListener('input', updateClassifyButtonState);
+    }
+
+    async function checkApiStatus(endpoint) {
+        try {
+            // Try primary key
+            let response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${API_KEYS.primary}`,
+                    'azureml-model-deployment': 'greensort-1'
+                },
+                body: JSON.stringify({ ping: true })
+            });
+            if (response.ok) return true;
+
+            // Log headers for debugging
+            console.debug('Check API Status Headers:', [...response.headers]);
+
+            // If primary key fails with 403, try secondary key
+            if (response.status === 403) {
+                console.warn('Primary key failed, trying secondary key...');
+                response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEYS.secondary}`,
+                        'azureml-model-deployment': 'greensort-1'
+                    },
+                    body: JSON.stringify({ ping: true })
+                });
+                if (response.ok) return true;
+                console.debug('Secondary Key Headers:', [...response.headers]);
+            }
+            throw new Error(`API responded with status ${response.status}`);
+        } catch (error) {
+            if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+                throw new Error('Classification API unavailable: NetworkError due to CORS or network issue');
+            }
+            throw new Error(`Classification API unavailable: ${error.message}`);
+        }
     }
 
     function updateModelStatus(text, status) {
@@ -220,16 +173,22 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.readAsDataURL(file);
         } else {
             alert('Please select a valid image file.');
-            selectedFile = null;
-            selectedImage.classList.add('hidden');
-            noImageLabel.classList.remove('hidden');
-            updateClassifyButtonState();
+            resetImageInput();
         }
+    }
+
+    function resetImageInput() {
+        selectedFile = null;
+        selectedImage.src = '';
+        selectedImage.classList.add('hidden');
+        noImageLabel.classList.remove('hidden');
+        imageInput.value = '';
+        updateClassifyButtonState();
     }
 
     function updateClassifyButtonState() {
         const quantity = parseFloat(quantityInput.value);
-        classifyBtn.disabled = !isModelLoaded || !selectedFile || isNaN(quantity) || quantity <= 0;
+        classifyBtn.disabled = !selectedFile || isNaN(quantity) || quantity <= 0;
     }
 
     function switchTab(tabId) {
@@ -242,8 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function classifyImage() {
-        if (!selectedFile || !isModelLoaded) {
-            alert('Please select an image and ensure models are loaded.');
+        if (!selectedFile) {
+            alert('Please select an image.');
             return;
         }
 
@@ -251,80 +210,143 @@ document.addEventListener('DOMContentLoaded', () => {
         progressBar.style.width = '10%';
 
         try {
-            // Process image
-            await simulateDelay(500);
+            // Convert image to base64
+            const base64Image = await fileToBase64(selectedFile);
             progressBar.style.width = '20%';
 
-            // Preprocess image for classification
-            const img = new Image();
-            img.src = selectedImage.src;
-            await new Promise(resolve => { img.onload = resolve; });
-            const tensor = tf.browser.fromPixels(img)
-                .resizeNearestNeighbor([224, 224])
-                .toFloat()
-                .div(tf.scalar(255.0))
-                .expandDims();
-
-            // Classification
-            let predictedClass, confidence, topPredictions;
-            if (classificationModel) {
-                progressBar.style.width = '50%';
-                const prediction = await classificationModel.predict(tensor).data();
-                const predictedClassIndex = prediction.indexOf(Math.max(...prediction));
-                predictedClass = CATEGORIES[predictedClassIndex];
-                confidence = prediction[predictedClassIndex] * 100;
-
-                // Get top 3 predictions
-                const topIndices = Array.from(prediction)
-                    .map((val, idx) => ({ val, idx }))
-                    .sort((a, b) => b.val - a.val)
-                    .slice(0, 3)
-                    .map(item => item.idx);
-                topPredictions = topIndices.map((index, i) => ({
-                    className: CATEGORIES[index],
-                    confidence: prediction[index] * 100
-                }));
+            // Call classification API
+            let classificationResponse;
+            if (isApiReady) {
+                classificationResponse = await callClassificationApi(base64Image);
             } else {
-                // Fallback to mock classification
-                ({ predictedClass, confidence, topPredictions } = mockClassification());
+                throw new Error('Classification API unavailable');
             }
+            progressBar.style.width = '50%';
 
-            progressBar.style.width = '70%';
-
+            const { predictedClass, confidence, topPredictions } = processClassificationResponse(classificationResponse);
             const quantity = parseFloat(quantityInput.value);
+
             if (isNaN(quantity) || quantity <= 0) {
-                alert('Please enter a valid quantity.');
-                return;
+                throw new Error('Invalid quantity entered');
             }
 
-            // Get recommendations
+            // Get recommendations (mock data since endpoint is upcoming)
             const recommendations = await getRecommendation(predictedClass, quantity);
             progressBar.style.width = '90%';
 
             // Display results
             displayResults(predictedClass, confidence, topPredictions, quantity, recommendations);
-            progressBar.style.width = '100%';
-
-            // Show processed image
             await showProcessedImage();
+            progressBar.style.width = '100%';
         } catch (error) {
             console.error('Classification error:', error);
-            alert('An error occurred during classification.');
+            let errorMessage = `Error during classification: ${error.message}.`;
+            if (error.message.includes('403')) {
+                errorMessage += ' Authentication failed with both keys. Verify API keys.';
+            } else if (error.message.includes('CORS') || error.message.includes('NetworkError')) {
+                errorMessage += ' CORS issue persists. The server must allow requests from http://127.0.0.1:5500. Try using a proxy server.';
+            }
+            alert(`${errorMessage} Using mock data.`);
+            const { predictedClass, confidence, topPredictions } = mockClassification();
+            const quantity = parseFloat(quantityInput.value) || 1;
+            const recommendations = await getRecommendation(predictedClass, quantity);
+            displayResults(predictedClass, confidence, topPredictions, quantity, recommendations);
+            await showProcessedImage();
         } finally {
             progressBar.style.width = '0%';
             classifyBtn.disabled = false;
         }
     }
 
-    function simulateDelay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function callClassificationApi(base64Image) {
+        try {
+            // Try primary key
+            let response = await fetch(API_ENDPOINTS.classification, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${API_KEYS.primary}`,
+                    'azureml-model-deployment': 'greensort-1'
+                },
+                body: JSON.stringify({
+                    image: base64Image
+                })
+            });
+
+            if (response.ok) {
+                return await response.json();
+            }
+
+            // Log headers for debugging
+            console.debug('Primary Key Headers:', [...response.headers]);
+
+            // If primary key fails with 403, try secondary key
+            if (response.status === 403) {
+                console.warn('Primary key failed, trying secondary key...');
+                response = await fetch(API_ENDPOINTS.classification, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEYS.secondary}`,
+                        'azureml-model-deployment': 'greensort-1'
+                    },
+                    body: JSON.stringify({
+                        image: base64Image
+                    })
+                });
+                if (response.ok) {
+                    return await response.json();
+                }
+                console.debug('Secondary Key Headers:', [...response.headers]);
+            }
+
+            throw new Error(`Classification API error: ${response.statusText} (${response.status})`);
+        } catch (error) {
+            if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+                throw new Error('Failed to call classification API: NetworkError due to CORS or network issue');
+            }
+            throw new Error(`Failed to call classification API: ${error.message}`);
+        }
+    }
+
+    function processClassificationResponse(response) {
+        // Assuming the API returns probabilities for each category
+        const probabilities = response.probabilities || response;
+        
+        // Find the predicted class
+        const predictedClassIndex = probabilities.indexOf(Math.max(...probabilities));
+        const predictedClass = CATEGORIES[predictedClassIndex];
+        const confidence = probabilities[predictedClassIndex] * 100;
+
+        // Get top 3 predictions
+        const topIndices = Array.from(probabilities)
+            .map((val, idx) => ({ val, idx }))
+            .sort((a, b) => b.val - a.val)
+            .slice(0, 3)
+            .map(item => item.idx);
+
+        const topPredictions = topIndices.map((index, i) => ({
+            className: CATEGORIES[index],
+            confidence: probabilities[index] * 100
+        }));
+
+        return { predictedClass, confidence, topPredictions };
     }
 
     function mockClassification() {
         const randomIndex = Math.floor(Math.random() * CATEGORIES.length);
         const predictedClass = CATEGORIES[randomIndex];
         const confidence = 75 + Math.random() * 20;
-        
+
         const topIndices = [randomIndex];
         while (topIndices.length < 3) {
             const newIndex = Math.floor(Math.random() * CATEGORIES.length);
@@ -332,6 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 topIndices.push(newIndex);
             }
         }
+
         const topPredictions = topIndices.map((index, i) => ({
             className: CATEGORIES[index],
             confidence: i === 0 ? confidence : (confidence - (i * 15))
@@ -340,62 +363,42 @@ document.addEventListener('DOMContentLoaded', () => {
         return { predictedClass, confidence, topPredictions };
     }
 
-    async function getRecommendation(inputKategori, inputBeratKg, tolerance = 0.2) {
+    async function getRecommendation(inputKategori, inputBeratKg) {
         try {
             const mappedCategory = CATEGORY_MAPPING[inputKategori] || inputKategori;
-            if (recommendationModel) {
-                const categoryIndex = CATEGORIES.indexOf(inputKategori);
-                const inputTensor = tf.tensor2d([[categoryIndex, inputBeratKg]]);
-                
-                const prediction = await recommendationModel.predict(inputTensor).data();
-                const [berat_min_kg, berat_max_kg, ...recIndices] = prediction;
-                
-                const rekomendasi = recIndices
-                    .slice(0, 3)
-                    .map(idx => `Recommendation ${Math.round(idx)}: Follow local recycling guidelines.`);
-                
-                const result = {
-                    kategori: mappedCategory,
-                    berat_input_kg: inputBeratKg,
-                    berat_min_kg,
-                    berat_max_kg,
-                    rekomendasi
-                };
 
-                if (inputBeratKg < berat_min_kg || inputBeratKg > berat_max_kg) {
-                    result.message = `Berat sampah Anda (${inputBeratKg} kg) sedikit tidak sesuai dengan rekomendasi untuk kategori ini (${berat_min_kg} kg - ${berat_max_kg} kg). Namun, berikut adalah beberapa rekomendasi yang bisa diterapkan:`;
-                }
+            // Mock recommendations since endpoint is upcoming
+            const mockRecommendations = [
+                `Sort ${mappedCategory} according to local recycling guidelines.`,
+                `Ensure ${mappedCategory} is clean and free of contaminants before disposal.`,
+                `Consider donating usable ${mappedCategory} items to local charities.`
+            ];
 
-                return result;
-            } else {
-                const matchingRows = RECOMMENDATION_DATA.filter(row => row.kategori === mappedCategory);
-                if (!matchingRows.length) {
-                    return { message: `Kategori '${mappedCategory}' tidak ditemukan dalam dataset.` };
-                }
+            const berat_min_kg = inputBeratKg * 0.8; // Mock min weight
+            const berat_max_kg = inputBeratKg * 1.2; // Mock max weight
 
-                const weightMatch = matchingRows.find(row =>
-                    row.berat_min_kg <= inputBeratKg && inputBeratKg <= row.berat_max_kg
-                );
+            const result = {
+                kategori: mappedCategory,
+                berat_input_kg: inputBeratKg,
+                berat_min_kg,
+                berat_max_kg,
+                rekomendasi: mockRecommendations,
+                message: 'Recommendation system is upcoming. Displaying general recycling guidelines.'
+            };
 
-                const bestMatch = weightMatch || matchingRows[0];
-                let message = '';
-
-                if (!weightMatch) {
-                    message = `Berat sampah Anda (${inputBeratKg} kg) sedikit tidak sesuai dengan rekomendasi untuk kategori ini (${bestMatch.berat_min_kg} kg - ${bestMatch.berat_max_kg} kg). Namun, berikut adalah beberapa rekomendasi yang bisa diterapkan:`;
-                }
-
-                return {
-                    kategori: bestMatch.kategori,
-                    berat_input_kg: inputBeratKg,
-                    berat_min_kg: bestMatch.berat_min_kg,
-                    berat_max_kg: bestMatch.berat_max_kg,
-                    message: message,
-                    rekomendasi: bestMatch.rekomendasi
-                };
+            if (inputBeratKg < berat_min_kg || inputBeratKg > berat_max_kg) {
+                result.message = `Berat sampah Anda (${inputBeratKg} kg) tidak sesuai dengan rekomendasi umum untuk kategori ini (${berat_min_kg} kg - ${berat_max_kg} kg). Berikut adalah panduan umum:`;
             }
+
+            return result;
         } catch (error) {
             console.error('Recommendation error:', error);
-            return { message: `Error generating recommendation: ${error.message}` };
+            return {
+                kategori: CATEGORY_MAPPING[inputKategori] || inputKategori,
+                berat_input_kg: inputBeratKg,
+                message: `Error generating recommendation: ${error.message}`,
+                rekomendasi: ['Follow local recycling guidelines']
+            };
         }
     }
 
@@ -472,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const recommendationContent = document.getElementById('recommendationContent');
         recommendationContent.innerHTML = '';
 
-        if (recommendations.message && !recommendations.rekomendasi) {
+        if (recommendations.message && !recommendations.rekomendasi.length) {
             recommendationContent.innerHTML = `<p class="recommendation-message">${recommendations.message}</p>`;
         } else {
             if (recommendations.message) {
