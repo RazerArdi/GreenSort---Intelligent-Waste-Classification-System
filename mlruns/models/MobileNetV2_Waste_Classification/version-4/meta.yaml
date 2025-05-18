@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1747424262099
+current_stage: None
+description: null
+last_updated_timestamp: 1747424262099
+name: MobileNetV2_Waste_Classification
+run_id: f62e930c7f434e2eb4078086eff2f691
+run_link: null
+source: file:////mnt/d/PROJECT/CapstoneProjectDBSteam/mlruns/0/f62e930c7f434e2eb4078086eff2f691/artifacts/model_MobileNetV2_Waste_Classification
+status: READY
+status_message: null
+storage_location: file:////mnt/d/PROJECT/CapstoneProjectDBSteam/mlruns/0/f62e930c7f434e2eb4078086eff2f691/artifacts/model_MobileNetV2_Waste_Classification
+user_id: null
+version: 4

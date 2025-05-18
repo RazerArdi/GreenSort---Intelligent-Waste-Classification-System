@@ -1,4 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Define and register custom L2 regularizer to fix "Unknown regularizer: L2"
+    class L2Regularizer {
+        constructor(config) {
+            this.l2 = config.l2 || 0.0001; // Match Keras model's l2 value
+        }
+
+        apply(x) {
+            return tf.mul(this.l2, tf.sum(tf.square(x)));
+        }
+
+        getConfig() {
+            return { l2: this.l2 };
+        }
+
+        static className = 'L2';
+    }
+    tf.serialization.registerClass(L2Regularizer);
+
     // Constants
     const CATEGORIES = [
         'Cardboard', 'Food_Organics', 'Glass', 'Metal',
@@ -42,14 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'Vegetation': 'Vegetasi'
     };
 
-    const API_ENDPOINTS = {
-        classification: 'https://greensort-jhfbo.eastus2.inference.ml.azure.com/score',
-        recommendation: 'upcoming'
-    };
-
-    const API_KEYS = {
-        primary: 'end',
-        secondary: 'end'
+    const MODEL_URLS = {
+        classification: 'https://modelai14.s3.ap-southeast-2.amazonaws.com/model.json',
+        recommendationData: 'https://modelai14.s3.ap-southeast-2.amazonaws.com/dataset.json'
     };
 
     // DOM Elements
@@ -70,8 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabContents = document.querySelectorAll('.tab-content');
 
     // State
-    let isApiReady = false;
+    let classificationModel = null;
+    let recommendationData = null;
     let selectedFile = null;
+    let isModelsLoaded = false;
 
     // Initialize
     initializeApp();
@@ -79,24 +94,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initializeApp() {
         console.log('Initializing app...');
 
-        // Check classification API availability
         try {
-            await checkApiStatus(API_ENDPOINTS.classification);
-            isApiReady = true;
-            updateModelStatus('Classification API ready. Recommendation system upcoming.', 'success');
+            await loadModels();
+            isModelsLoaded = true;
+            updateModelStatus('Model and data loaded successfully.', 'success');
         } catch (error) {
-            console.error('API initialization failed:', error);
-            let errorMessage = 'Failed to connect to classification API.';
-            if (error.message.includes('403')) {
-                errorMessage += ' Authentication failed with both keys. Verify API keys.';
-            } else if (error.message.includes('CORS') || error.message.includes('NetworkError')) {
-                errorMessage += ' CORS issue detected. The server must allow requests from http://127.0.0.1:5500. Consider using a proxy for development.';
-            }
-            updateModelStatus(errorMessage, 'error');
-            const demoWarning = document.createElement('div');
-            demoWarning.className = 'demo-warning';
-            demoWarning.innerHTML = `<strong>Demo Mode:</strong> API unavailable. ${errorMessage} Contact API administrator or set up a proxy server.`;
-            document.querySelector('.left-panel').prepend(demoWarning);
+            console.error('Initialization failed:', error);
+            updateModelStatus(`Failed to load model or data: ${error.message}`, 'error');
+            alert(`Failed to load model or data: ${error.message}. Please check your connection or contact the administrator.`);
+            classifyBtn.disabled = true;
         }
 
         // Event listeners
@@ -111,44 +117,39 @@ document.addEventListener('DOMContentLoaded', () => {
         quantityInput.addEventListener('input', updateClassifyButtonState);
     }
 
-    async function checkApiStatus(endpoint) {
+    async function loadModels() {
         try {
-            // Try primary key
-            let response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${API_KEYS.primary}`,
-                    'azureml-model-deployment': 'greensort-1'
-                },
-                body: JSON.stringify({ ping: true })
-            });
-            if (response.ok) return true;
-
-            // Log headers for debugging
-            console.debug('Check API Status Headers:', [...response.headers]);
-
-            // If primary key fails with 403, try secondary key
-            if (response.status === 403) {
-                console.warn('Primary key failed, trying secondary key...');
-                response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEYS.secondary}`,
-                        'azureml-model-deployment': 'greensort-1'
-                    },
-                    body: JSON.stringify({ ping: true })
-                });
-                if (response.ok) return true;
-                console.debug('Secondary Key Headers:', [...response.headers]);
+            // Load classification model
+            console.log('Loading classification model from:', MODEL_URLS.classification);
+            try {
+                classificationModel = await tf.loadLayersModel(MODEL_URLS.classification);
+                console.log('Classification model loaded successfully.');
+                // Warm up classification model
+                console.log('Warming up classification model...');
+                const dummyImage = tf.zeros([1, 224, 224, 3]);
+                await classificationModel.predict(dummyImage).dispose();
+                dummyImage.dispose();
+            } catch (error) {
+                console.error('Classification model error:', error);
+                throw new Error(`Classification model failed to load: ${error.message} (URL: ${MODEL_URLS.classification})`);
             }
-            throw new Error(`API responded with status ${response.status}`);
+
+            // Load recommendation data
+            console.log('Loading recommendation data from:', MODEL_URLS.recommendationData);
+            try {
+                const response = await fetch(MODEL_URLS.recommendationData);
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+                }
+                recommendationData = await response.json();
+                console.log('Recommendation data loaded successfully:', recommendationData);
+            } catch (error) {
+                console.error('Recommendation data error:', error);
+                throw new Error(`Recommendation data failed to load: ${error.message} (URL: ${MODEL_URLS.recommendationData})`);
+            }
         } catch (error) {
-            if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
-                throw new Error('Classification API unavailable: NetworkError due to CORS or network issue');
-            }
-            throw new Error(`Classification API unavailable: ${error.message}`);
+            console.error('Detailed error:', error);
+            throw error;
         }
     }
 
@@ -188,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateClassifyButtonState() {
         const quantity = parseFloat(quantityInput.value);
-        classifyBtn.disabled = !selectedFile || isNaN(quantity) || quantity <= 0;
+        classifyBtn.disabled = !isModelsLoaded || !selectedFile || isNaN(quantity) || quantity <= 0;
     }
 
     function switchTab(tabId) {
@@ -205,129 +206,87 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please select an image.');
             return;
         }
+        if (!isModelsLoaded) {
+            alert('Model or data not loaded. Please check your connection and try again.');
+            return;
+        }
 
         classifyBtn.disabled = true;
         progressBar.style.width = '10%';
 
         try {
-            // Convert image to base64
-            const base64Image = await fileToBase64(selectedFile);
+            // Preprocess image
+            console.log('Preprocessing image...');
+            const tensor = await preprocessImage(selectedFile);
             progressBar.style.width = '20%';
 
-            // Call classification API
-            let classificationResponse;
-            if (isApiReady) {
-                classificationResponse = await callClassificationApi(base64Image);
-            } else {
-                throw new Error('Classification API unavailable');
-            }
+            // Perform classification
+            console.log('Classifying image...');
+            const predictions = await classifyWithModel(tensor);
             progressBar.style.width = '50%';
+            const { predictedClass, confidence, topPredictions } = processClassificationResponse(predictions);
 
-            const { predictedClass, confidence, topPredictions } = processClassificationResponse(classificationResponse);
             const quantity = parseFloat(quantityInput.value);
-
             if (isNaN(quantity) || quantity <= 0) {
                 throw new Error('Invalid quantity entered');
             }
 
-            // Get recommendations (mock data since endpoint is upcoming)
-            const recommendations = await getRecommendation(predictedClass, quantity);
+            // Get recommendations
+            console.log('Generating recommendations...');
+            const recommendations = getRecommendation(predictedClass, quantity);
             progressBar.style.width = '90%';
 
             // Display results
+            console.log('Displaying results...');
             displayResults(predictedClass, confidence, topPredictions, quantity, recommendations);
             await showProcessedImage();
             progressBar.style.width = '100%';
         } catch (error) {
-            console.error('Classification error:', error);
-            let errorMessage = `Error during classification: ${error.message}.`;
-            if (error.message.includes('403')) {
-                errorMessage += ' Authentication failed with both keys. Verify API keys.';
-            } else if (error.message.includes('CORS') || error.message.includes('NetworkError')) {
-                errorMessage += ' CORS issue persists. The server must allow requests from http://127.0.0.1:5500. Try using a proxy server.';
-            }
-            alert(`${errorMessage} Using mock data.`);
-            const { predictedClass, confidence, topPredictions } = mockClassification();
-            const quantity = parseFloat(quantityInput.value) || 1;
-            const recommendations = await getRecommendation(predictedClass, quantity);
-            displayResults(predictedClass, confidence, topPredictions, quantity, recommendations);
-            await showProcessedImage();
-        } finally {
+            console.error('Error during classification or recommendation:', error);
+            alert(`Error: ${error.message}. Please try again or contact the administrator.`);
             progressBar.style.width = '0%';
+        } finally {
             classifyBtn.disabled = false;
         }
     }
 
-    function fileToBase64(file) {
+    async function preprocessImage(file) {
         return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = () => {
+                let tensor = tf.browser.fromPixels(img)
+                    .resizeBilinear([224, 224])
+                    .toFloat()
+                    .div(tf.scalar(255.0))
+                    .expandDims();
+                // MobileNetV2 expects [-1,1] normalization
+                tensor = tensor.sub(0.5).mul(2.0);
+                URL.revokeObjectURL(img.src);
+                resolve(tensor);
+            };
+            img.onerror = () => reject(new Error('Failed to load image'));
         });
     }
 
-    async function callClassificationApi(base64Image) {
+    async function classifyWithModel(tensor) {
         try {
-            // Try primary key
-            let response = await fetch(API_ENDPOINTS.classification, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${API_KEYS.primary}`,
-                    'azureml-model-deployment': 'greensort-1'
-                },
-                body: JSON.stringify({
-                    image: base64Image
-                })
-            });
-
-            if (response.ok) {
-                return await response.json();
-            }
-
-            // Log headers for debugging
-            console.debug('Primary Key Headers:', [...response.headers]);
-
-            // If primary key fails with 403, try secondary key
-            if (response.status === 403) {
-                console.warn('Primary key failed, trying secondary key...');
-                response = await fetch(API_ENDPOINTS.classification, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEYS.secondary}`,
-                        'azureml-model-deployment': 'greensort-1'
-                    },
-                    body: JSON.stringify({
-                        image: base64Image
-                    })
-                });
-                if (response.ok) {
-                    return await response.json();
-                }
-                console.debug('Secondary Key Headers:', [...response.headers]);
-            }
-
-            throw new Error(`Classification API error: ${response.statusText} (${response.status})`);
+            const predictions = classificationModel.predict(tensor);
+            const probabilities = await predictions.data();
+            tensor.dispose();
+            predictions.dispose();
+            return Array.from(probabilities);
         } catch (error) {
-            if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
-                throw new Error('Failed to call classification API: NetworkError due to CORS or network issue');
-            }
-            throw new Error(`Failed to call classification API: ${error.message}`);
+            tensor.dispose();
+            throw new Error(`Classification error: ${error.message}`);
         }
     }
 
-    function processClassificationResponse(response) {
-        // Assuming the API returns probabilities for each category
-        const probabilities = response.probabilities || response;
-        
-        // Find the predicted class
+    function processClassificationResponse(probabilities) {
         const predictedClassIndex = probabilities.indexOf(Math.max(...probabilities));
         const predictedClass = CATEGORIES[predictedClassIndex];
         const confidence = probabilities[predictedClassIndex] * 100;
 
-        // Get top 3 predictions
         const topIndices = Array.from(probabilities)
             .map((val, idx) => ({ val, idx }))
             .sort((a, b) => b.val - a.val)
@@ -342,63 +301,38 @@ document.addEventListener('DOMContentLoaded', () => {
         return { predictedClass, confidence, topPredictions };
     }
 
-    function mockClassification() {
-        const randomIndex = Math.floor(Math.random() * CATEGORIES.length);
-        const predictedClass = CATEGORIES[randomIndex];
-        const confidence = 75 + Math.random() * 20;
-
-        const topIndices = [randomIndex];
-        while (topIndices.length < 3) {
-            const newIndex = Math.floor(Math.random() * CATEGORIES.length);
-            if (!topIndices.includes(newIndex)) {
-                topIndices.push(newIndex);
-            }
-        }
-
-        const topPredictions = topIndices.map((index, i) => ({
-            className: CATEGORIES[index],
-            confidence: i === 0 ? confidence : (confidence - (i * 15))
-        }));
-
-        return { predictedClass, confidence, topPredictions };
-    }
-
-    async function getRecommendation(inputKategori, inputBeratKg) {
+    function getRecommendation(inputKategori, inputBeratKg) {
         try {
             const mappedCategory = CATEGORY_MAPPING[inputKategori] || inputKategori;
+            console.log(`Processing recommendation for category: ${mappedCategory}, weight: ${inputBeratKg} kg`);
 
-            // Mock recommendations since endpoint is upcoming
-            const mockRecommendations = [
-                `Sort ${mappedCategory} according to local recycling guidelines.`,
-                `Ensure ${mappedCategory} is clean and free of contaminants before disposal.`,
-                `Consider donating usable ${mappedCategory} items to local charities.`
-            ];
+            // Find matching recommendation from dataset.json
+            const entry = recommendationData.find(item => {
+                return item.kategori === mappedCategory &&
+                       inputBeratKg >= item.berat_min_kg &&
+                       inputBeratKg <= item.berat_max_kg;
+            });
 
-            const berat_min_kg = inputBeratKg * 0.8; // Mock min weight
-            const berat_max_kg = inputBeratKg * 1.2; // Mock max weight
+            if (!entry) {
+                throw new Error(`No recommendation found for ${mappedCategory} with weight ${inputBeratKg} kg`);
+            }
 
-            const result = {
+            const berat_min_kg = entry.berat_min_kg;
+            const berat_max_kg = entry.berat_max_kg;
+
+            return {
                 kategori: mappedCategory,
                 berat_input_kg: inputBeratKg,
                 berat_min_kg,
                 berat_max_kg,
-                rekomendasi: mockRecommendations,
-                message: 'Recommendation system is upcoming. Displaying general recycling guidelines.'
+                rekomendasi: entry.rekomendasi,
+                message: inputBeratKg < berat_min_kg || inputBeratKg > berat_max_kg
+                    ? `Berat sampah Anda (${inputBeratKg} kg) tidak sesuai dengan rekomendasi umum untuk kategori ini (${berat_min_kg} kg - ${berat_max_kg} kg).`
+                    : ''
             };
-
-            if (inputBeratKg < berat_min_kg || inputBeratKg > berat_max_kg) {
-                result.message = `Berat sampah Anda (${inputBeratKg} kg) tidak sesuai dengan rekomendasi umum untuk kategori ini (${berat_min_kg} kg - ${berat_max_kg} kg). Berikut adalah panduan umum:`;
-            }
-
-            return result;
         } catch (error) {
             console.error('Recommendation error:', error);
-            return {
-                kategori: CATEGORY_MAPPING[inputKategori] || inputKategori,
-                berat_input_kg: inputBeratKg,
-                message: `Error generating recommendation: ${error.message}`,
-                rekomendasi: ['Follow local recycling guidelines']
-            };
+            throw new Error(`Failed to generate recommendation: ${error.message}`);
         }
     }
 
@@ -475,21 +409,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const recommendationContent = document.getElementById('recommendationContent');
         recommendationContent.innerHTML = '';
 
-        if (recommendations.message && !recommendations.rekomendasi.length) {
-            recommendationContent.innerHTML = `<p class="recommendation-message">${recommendations.message}</p>`;
-        } else {
-            if (recommendations.message) {
-                recommendationContent.innerHTML += `<p class="recommendation-message">${recommendations.message}</p>`;
-            }
-            const recList = document.createElement('ul');
-            recList.className = 'recommendation-list';
-            recommendations.rekomendasi.forEach((rec, index) => {
-                const li = document.createElement('li');
-                li.textContent = `${index + 1}. ${rec}`;
-                recList.appendChild(li);
-            });
-            recommendationContent.appendChild(recList);
+        if (recommendations.message) {
+            recommendationContent.innerHTML += `<p class="recommendation-message">${recommendations.message}</p>`;
         }
+        const recList = document.createElement('ul');
+        recList.className = 'recommendation-list';
+        recommendations.rekomendasi.forEach((rec, index) => {
+            const li = document.createElement('li');
+            li.textContent = `${index + 1}. ${rec}`;
+            recList.appendChild(li);
+        });
+        recommendationContent.appendChild(recList);
     }
 
     async function showProcessedImage() {
@@ -504,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = selectedImage.src;
         await new Promise(resolve => {
             img.onload = resolve;
+            img.onerror = () => console.error('Failed to load image for modal');
         });
 
         ctx.drawImage(img, 0, 0, 224, 224);

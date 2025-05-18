@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1747565251291
+current_stage: None
+description: null
+last_updated_timestamp: 1747565251291
+name: Recycling_Recommendation_Model
+run_id: ebda6bbe3d8c472585d23550fcdd3d05
+run_link: null
+source: file:////mnt/d/PROJECT/CapstoneProjectDBSteam/mlruns/777377447040730416/ebda6bbe3d8c472585d23550fcdd3d05/artifacts/model_Recycling_Recommendation_Model
+status: READY
+status_message: null
+storage_location: file:////mnt/d/PROJECT/CapstoneProjectDBSteam/mlruns/777377447040730416/ebda6bbe3d8c472585d23550fcdd3d05/artifacts/model_Recycling_Recommendation_Model
+user_id: null
+version: 2

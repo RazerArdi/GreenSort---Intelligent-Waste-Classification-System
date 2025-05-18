@@ -1,0 +1,15 @@
+artifact_uri: file:////mnt/d/PROJECT/CapstoneProjectDBSteam/mlruns/0/c269c3d59a7d4623a283e16ddb0fcf97/artifacts
+end_time: 1747563756901
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: c269c3d59a7d4623a283e16ddb0fcf97
+run_name: MobileNetV2_Waste_Classification
+run_uuid: c269c3d59a7d4623a283e16ddb0fcf97
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1747563719660
+status: 3
+tags: []
+user_id: bayuardiyansyah

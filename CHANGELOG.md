@@ -5,13 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),  
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.6.1] - 2025-05-18
+> Created by **Bayu Ardiyansyah** 
+
+### 🎉 Added
+- add webAPI (`API.JS`, `html.API` , `styleAPI.css`)
+
+## 🛠️ Changed
+- Replaced TensorFlow.js recommendation model with a rule-based system fetching recommendations from `dataset.json`, enabling category- and weight-based lookups.
+- Updated `MODEL_URLS` to rename `recommendation` to `recommendationData`, pointing to `https://modelai14.s3.ap-southeast-2.amazonaws.com/dataset.json`.
+- Modified `getRecommendation` to query `dataset.json` for recommendations, mapping English categories (e.g., "Cardboard") to Indonesian (e.g., "Kardus") for consistency.
+- Adjusted image preprocessing in `preprocessImage` to include MobileNetV2-specific normalization ([-1, 1] range) for accurate classification.
+- Add Testing_unit `tes.html`.
+
+## 🐛 Fixed
+- Resolved `Unknown regularizer: L2` error in classification model by registering a custom `L2Regularizer` class with `l2=0.0001`, matching the Keras model’s configuration.
+- Fixed `Failed to load models: Recommendation model failed to load` error by removing invalid `tf.loadLayersModel` call for `dataset.json` and using `fetch` to load JSON data.
+- Improved error handling for `dataset.json` fetch failures, adding HTTP status checks and user-friendly alerts.
+- Ensured proper tensor disposal in `classifyWithModel` to prevent memory leaks during image classification.
+
+## Issue
+- UNIFX GUI `testingAPI` (yet)
+
+---
 ## [6.5.6] - 2025-05-15
 > Created by **Bayu Ardiyansyah** 
+
+### 🛠️ Changed
 - Revision for Web interface
 - Revision for CapstoneDBS_ComputerVision.ipynb (MLFLOW)
 - Revision for CapstoneDBS/Recommendation System.ipynb (MLFLOW)
 - Retrain Model
+
 ---
+
 ## [6.5.2] - 2025-05-14
 > Created by **Bayu Ardiyansyah** 
 

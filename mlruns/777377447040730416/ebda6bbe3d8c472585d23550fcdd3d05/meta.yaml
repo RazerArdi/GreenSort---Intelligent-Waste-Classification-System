@@ -1,0 +1,15 @@
+artifact_uri: file:////mnt/d/PROJECT/CapstoneProjectDBSteam/mlruns/777377447040730416/ebda6bbe3d8c472585d23550fcdd3d05/artifacts
+end_time: 1747565251738
+entry_point_name: ''
+experiment_id: '777377447040730416'
+lifecycle_stage: active
+run_id: ebda6bbe3d8c472585d23550fcdd3d05
+run_name: Recycling_Recommendation_Model
+run_uuid: ebda6bbe3d8c472585d23550fcdd3d05
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1747565243424
+status: 3
+tags: []
+user_id: bayuardiyansyah

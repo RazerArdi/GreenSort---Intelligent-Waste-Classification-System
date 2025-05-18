@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenSort</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <link rel="stylesheet" href="styleAPI.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.0.0/dist/tf.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1><i class="fas fa-recycle"></i> GreenSort</h1>
+            <p>Waste Classification, Pricing and Recommendation Tool</p>
+        </div>
+        <div id="modelStatus" class="model-status">
+            <span class="status-dot loading"></span>
+            <span class="status-text">Loading model...</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="classify">Classify Waste</button>
+            <button class="tab-btn" data-tab="about">About</button>
+        </div>
+
+        <div id="classifyTab" class="tab-content active">
+            <div class="content-grid">
+                <div class="left-panel">
+                    <div class="image-container">
+                        <div class="image-frame">
+                            <div id="imageCanvas" class="image-canvas">
+                                <div id="noImageLabel" class="no-image-label">
+                                    <i class="fas fa-image"></i>
+                                    <p>No image selected</p>
+                                </div>
+                                <img id="selectedImage" class="hidden">
+                            </div>
+                        </div>
+                        <div class="control-frame">
+                            <div class="file-input-container">
+                                <label for="imageInput" class="select-btn">
+                                    <i class="fas fa-file-image"></i> Select Image
+                                </label>
+                                <input type="file" id="imageInput" accept="image/*" class="hidden">
+                            </div>
+                            <div class="quantity-frame">
+                                <label for="quantityInput">Quantity (kg):</label>
+                                <input type="number" id="quantityInput" min="0.1" step="0.1" value="1.0">
+                            </div>
+                        </div>
+                        <button id="classifyBtn" class="classify-btn" disabled>
+                            <i class="fas fa-search"></i> Classify Waste
+                        </button>
+                        <div id="progressContainer" class="progress-container">
+                            <div id="progressBar" class="progress-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div class="results-container">
+                        <div id="predictionsFrame" class="predictions-frame">
+                            <p class="no-results">No results available</p>
+                        </div>
+
+                        <div id="priceFrame" class="price-frame hidden">
+                            <h3>Price Calculation</h3>
+                            <div id="priceContent" class="price-content"></div>
+                        </div>
+
+                        <div id="recommendationFrame" class="recommendation-frame hidden">
+                            <h3>Recycling Recommendations</h3>
+                            <div id="recommendationContent" class="recommendation-content"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="aboutTab" class="tab-content">
+            <div class="about-content">
+                <h2>GreenSort - Waste Classification, Pricing, and Recommendation System</h2>
+                
+                <p>GreenSort is an intelligent waste management system that uses Computer Vision to identify waste materials, 
+                predict their market value, and provide recycling recommendations based on category and weight.</p>
+                
+                <h3>Features</h3>
+                <ul>
+                    <li>Classify waste into 9 different categories</li>
+                    <li>Estimate the value of recyclable materials</li>
+                    <li>Calculate total price including delivery costs</li>
+                    <li>Provide recycling recommendations</li>
+                    <li>Optimize waste management and recycling processes</li>
+                </ul>
+                
+                <h3>Waste Categories</h3>
+                <div class="categories-grid">
+                    <div class="category-card" style="--category-color: #cd853f;">
+                        <div class="category-indicator"></div>
+                        <div class="category-details">
+                            <h4>Cardboard</h4>
+                            <p>Rp 2,000/kg</p>
+                        </div>
+                    </div>
+                    <div class="category-card" style="--category-color: #8fbc8f;">
+                        <div class="category-indicator"></div>
+                        <div class="category-details">
+                            <h4>Food Organics</h4>
+                            <p>Rp 500/kg</p>
+                        </div>
+                    </div>
+                    <div class="category-card" style="--category-color: #add8e6;">
+                        <div class="category-indicator"></div>
+                        <div class="category-details">
+                            <h4>Glass</h4>
+                            <p>Rp 1,500/kg</p>
+                        </div>
+                    </div>
+                    <div class="category-card" style="--category-color: #c0c0c0;">
+                        <div class="category-indicator"></div>
+                        <div class="category-details">
+                            <h4>Metal</h4>
+                            <p>Rp 8,000/kg</p>
+                        </div>
+                    </div>
+                    <div class="category-card" style="--category-color: #808080;">
+                        <div class="category-indicator"></div>
+                        <div class="category-details">
+                            <h4>Miscellaneous Trash</h4>
+                            <p>Rp 300/kg</p>
+                        </div>
+                    </div>
+                    <div class="category-card" style="--category-color: #f5f5dc;">
+                        <div class="category-indicator"></div>
+                        <div class="category-details">
+                            <h4>Paper</h4>
+                            <p>Rp 2,500/kg</p>
+                        </div>
+                    </div>
+                    <div class="category-card" style="--category-color: #87cefa;">
+                        <div class="category-indicator"></div>
+                        <div class="category-details">
+                            <h4>Plastic</h4>
+                            <p>Rp 4,000/kg</p>
+                        </div>
+                    </div>
+                    <div class="category-card" style="--category-color: #db7093;">
+                        <div class="category-indicator"></div>
+                        <div class="category-details">
+                            <h4>Textile Trash</h4>
+                            <p>Rp 1,000/kg</p>
+                        </div>
+                    </div>
+                    <div class="category-card" style="--category-color: #32cd32;">
+                        <div class="category-indicator"></div>
+                        <div class="category-details">
+                            <h4>Vegetation</h4>
+                            <p>Rp 600/kg</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>How to Use</h3>
+                <ol>
+                    <li>Select an image of waste material using the "Select Image" button</li>
+                    <li>Set the quantity in kilograms</li>
+                    <li>Click "Classify Waste" to analyze the image, predict the price, and get recommendations</li>
+                    <li>View the classification, pricing, and recycling recommendations</li>
+                </ol>
+                
+                <h3>Dataset</h3>
+                <p>This application is trained on the RealWaste dataset from the UCI Machine Learning Repository:
+                <a href="https://archive.ics.uci.edu/dataset/908/realwaste" target="_blank">https://archive.ics.uci.edu/dataset/908/realwaste</a></p>
+                
+                <p>The recommendation system uses a custom dataset for recycling suggestions.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 GreenSort. All rights reserved.</p>
+        <p>v1.0.0</p>
+    </footer>
+
+    <!-- Modal for processed image -->
+    <div id="processedImageModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Processed Image (224x224)</h3>
+            <div id="processedImageContainer" class="processed-image-container"></div>
+            <p>This is the processed image used by the model for classification.</p>
+        </div>
+    </div>
+
+    <script src="appAPI.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+artifact_path: model_MobileNetV2_Waste_Classification
+flavors:
+  python_function:
+    data: data
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.tensorflow
+    python_version: 3.10.16
+  tensorflow:
+    code: null
+    data: data
+    keras_version: 2.15.1
+    model_type: keras
+    save_format: tf
+is_signature_from_type_hint: false
+mlflow_version: 2.22.0
+model_size_bytes: 73435511
+model_uuid: 673ff53141c347fd99557a2d10ca0438
+prompts: null
+run_id: c269c3d59a7d4623a283e16ddb0fcf97
+signature:
+  inputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float32", "shape": [-1, 224,
+    224, 3]}}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float32", "shape": [-1,
+    9]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2025-05-18 10:22:14.748320'
