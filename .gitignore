@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-ComputerVision/realwaste-main/RealWaste
+data/realwaste-main/RealWaste
 
 # C extensions
 *.so
@@ -138,6 +138,7 @@ ENV/
 env.bak/
 venv.bak/
 myenv/
+.conda
 
 # Spyder project settings
 .spyderproject
