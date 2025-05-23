@@ -78,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > Created by **Muhammad Rofi'ul Arham**
 
 ### 🎉 Added
--  _N/A_
+-  add new dataset
 
 ### 🛠️ Changed
 - Update database `web/db/greensort.sql` with changes to add recommendation system
