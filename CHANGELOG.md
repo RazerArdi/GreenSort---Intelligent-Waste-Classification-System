@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),  
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+## [6.6.2] - 2025-05-31
+> Created by **Bayu Ardiyansyah** 
+
+## 🐛 Fixed
+- Resolving `Corrupt Datasets` with removal methods.
+- Retrain Dataset and Modify `CapstoneDBS_ComputerVision.ipynb` for better standardization (Normalization (overfitting/underfitting))
+
+---
 ## [6.6.1] - 2025-05-18
 > Created by **Bayu Ardiyansyah** 
 
-### 🎉 Added
+## 🎉 Added
 - add webAPI (`API.JS`, `html.API` , `styleAPI.css`)
 
 ## 🛠️ Changed
